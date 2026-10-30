@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import math
 import re
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
@@ -33,8 +34,12 @@ if TYPE_CHECKING:
     from powercontext.artifacts.models import MemoryCitation
 
 PDF_PAGE_SOURCE_NAME = "pdf-page"
-_POOL_PER_QUERY = 60
+_POOL_PER_QUERY = 80
+_MAX_RESOLVE = 120
+_MAX_DOCUMENTS = 32
 _TOKEN = re.compile(r"[a-z]+|\d+")
+_NUMBER = re.compile(r"\d{1,3}(?:,\d{3})+|\d+")
+_SPACES = re.compile(r"\s+")
 _FUNCTION_WORDS = frozenset(
     {
         "a",
@@ -215,6 +220,30 @@ def _tokens(value: str) -> list[str]:
     return _TOKEN.findall(value.casefold())
 
 
+def _numbers(value: str) -> set[str]:
+    """Extract comparable numeric evidence, joining values split by thousands separators."""
+
+    return {match.replace(",", "") for match in _NUMBER.findall(value)}
+
+
+def _normalized_text(value: str) -> str:
+    return _SPACES.sub(" ", value.casefold()).strip()
+
+
+def _document_of(text: str) -> str:
+    """Read the document identity that every page projection prefixes to its text."""
+
+    head, _, _body = text.partition("\n")
+    return head.strip()
+
+
+def _page_body(text: str) -> str:
+    """Drop the leading document identity so it cannot supply page evidence."""
+
+    _head, separator, body = text.partition("\n")
+    return body if separator else text
+
+
 def _question_profile(question: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
     """Split a natural-language question into content terms and numeric evidence."""
 
@@ -230,13 +259,16 @@ def _question_profile(question: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
 
 
 def _query_variants(question: str, terms: tuple[str, ...], numbers: tuple[str, ...]) -> tuple[str, ...]:
-    """Build a few complementary lexical probes for one question."""
+    """Build complementary lexical probes so one weak probe cannot hide a page."""
 
     variants = [question.strip()]
     if numbers:
         variants.append(" ".join(numbers))
     if terms:
-        variants.append(" ".join(numbers) + " " + " ".join(terms[:5]) if numbers else " ".join(terms[:5]))
+        lead = " ".join(terms[:5])
+        variants.append(f"{' '.join(numbers)} {lead}".strip() if numbers else lead)
+    if len(terms) > 5:
+        variants.append(" ".join(terms[5:10]))
     unique: list[str] = []
     for variant in variants:
         cleaned = " ".join(variant.split())
@@ -245,15 +277,65 @@ def _query_variants(question: str, terms: tuple[str, ...], numbers: tuple[str, .
     return tuple(unique)
 
 
-def _score(text: str, terms: tuple[str, ...], numbers: tuple[str, ...]) -> float:
-    """Rank one candidate page by evidence-term and numeric coverage."""
+def _names_document(document_id: str, question_tokens: frozenset[str]) -> bool:
+    """Decide whether the question names the document it is asking about.
 
-    present = set(_tokens(text))
-    score = 0.0
-    if terms:
-        score += 3.0 * sum(1 for term in terms if term in present) / len(terms)
+    Only alphabetic identity tokens count: a shared fiscal year is not a document name.
+    """
+
+    return bool(
+        {
+            token
+            for token in _tokens(document_id)
+            if len(token) >= 4 and not token.isdigit()
+        }
+        & question_tokens
+    )
+
+
+def _restrict_to_named_documents(
+    items: list[tuple[int, Any]],
+    question_tokens: frozenset[str],
+) -> list[tuple[int, Any]]:
+    """Prefer pages of the filing a question names when one scope mixes filings.
+
+    The restriction is only applied when the candidate pool looks like a small set of
+    documents and the question singles out a strict subset of them; otherwise the pool is
+    returned untouched so an unusual projection shape can never empty the result.
+    """
+
+    documents = {_document_of(hit.text) for _rank, hit in items}
+    if not 2 <= len(documents) <= _MAX_DOCUMENTS:
+        return items
+    mentioned = {document for document in documents if _names_document(document, question_tokens)}
+    if not mentioned or len(mentioned) == len(documents):
+        return items
+    restricted = [item for item in items if _document_of(item[1].text) in mentioned]
+    return restricted or items
+
+
+def _score(
+    hit: Any,
+    terms: tuple[str, ...],
+    numbers: tuple[str, ...],
+    weights: dict[str, float],
+    total_weight: float,
+    phrase: str,
+    question_tokens: frozenset[str],
+) -> float:
+    """Rank one candidate page by weighted term coverage, numbers, and document match."""
+
+    body = _page_body(hit.text)
+    present = set(_tokens(body))
+    matched = sum(weights.get(term, 0.0) for term in terms if term in present)
+    score = 3.0 * (matched / total_weight if total_weight else 0.0)
     if numbers:
-        score += 2.0 * sum(1 for number in numbers if number in present) / len(numbers)
+        score += 2.5 * len(set(numbers) & _numbers(body)) / len(set(numbers))
+    if _names_document(_document_of(hit.text), question_tokens):
+        # A scope may mix several filings: the named document must outrank the rest.
+        score += 6.0
+    if len(phrase) >= 24 and phrase in _normalized_text(body):
+        score += 1.5
     return score
 
 
@@ -267,33 +349,76 @@ async def search_pdf_pages(memory: Any, question: str, limit: int = 10) -> tuple
         return ()
 
     terms, numbers = _question_profile(question)
-    candidates: list[tuple[int, Any]] = []
-    seen: set[str] = set()
+    question_tokens = frozenset(_tokens(question))
+    phrase = _normalized_text(question)
+
+    collected: dict[str, tuple[int, Any]] = {}
     for variant in _query_variants(question, terms, numbers):
         page = await memory.search(
             SearchMemoryRequest(query=variant, mode="fts", limit=_POOL_PER_QUERY)
         )
         for rank, hit in enumerate(page.hits):
-            if hit.entry_version_id in seen:
-                continue
-            seen.add(hit.entry_version_id)
-            candidates.append((rank, hit))
+            prior = collected.get(hit.entry_version_id)
+            if prior is None or rank < prior[0]:
+                collected[hit.entry_version_id] = (rank, hit)
+
+    if not collected:
+        for probe in (*numbers[:2], *terms[:3]):
+            page = await memory.search(
+                SearchMemoryRequest(query=probe, mode="fts", limit=_POOL_PER_QUERY)
+            )
+            for rank, hit in enumerate(page.hits):
+                collected.setdefault(hit.entry_version_id, (rank, hit))
+
+    if not collected:
+        return ()
+
+    pool = list(collected.values())
+    preferred = _restrict_to_named_documents(pool, question_tokens)
+    if preferred is pool:
+        items = pool
+    else:
+        # Keep the named filing first, then offer the rest as recall backfill.
+        preferred_ids = {hit.entry_version_id for _rank, hit in preferred}
+        items = preferred + [
+            item for item in pool if item[1].entry_version_id not in preferred_ids
+        ]
+    if not items:
+        return ()
+
+    total = len(items)
+    document_frequency = dict.fromkeys(terms, 0)
+    for _rank, hit in items:
+        present = set(_tokens(_page_body(hit.text)))
+        for term in terms:
+            if term in present:
+                document_frequency[term] += 1
+    weights = {
+        term: math.log(1.0 + total / (1.0 + count)) for term, count in document_frequency.items()
+    }
+    total_weight = sum(weights.values()) or 1.0
 
     ranked = sorted(
-        candidates,
-        key=lambda item: (_score(item[1].text, terms, numbers), -item[0]),
+        items,
+        key=lambda item: (
+            _score(item[1], terms, numbers, weights, total_weight, phrase, question_tokens),
+            -item[0],
+        ),
         reverse=True,
     )
 
     results: list[MemoryCitation] = []
     used_pages: set[str] = set()
-    for _, hit in ranked:
+    for _rank, hit in ranked[:_MAX_RESOLVE]:
         citation = MemoryCitation(
             memory_ref=hit.memory_ref,
             entry_id=hit.entry_id,
             entry_version_id=hit.entry_version_id,
         )
-        entry = (await memory.get(GetMemoryEntryRequest(citation=citation))).entry
+        try:
+            entry = (await memory.get(GetMemoryEntryRequest(citation=citation))).entry
+        except Exception:  # noqa: BLE001 - a stale candidate must not fail the whole search
+            continue
         if len(entry.sources) != 1:
             # Only an unambiguous single-page entry can back one exact page citation.
             continue

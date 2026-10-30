@@ -1,4 +1,4 @@
-# Copyright (c) 2026 OceanBase.
+﻿# Copyright (c) 2026 OceanBase.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -168,6 +168,7 @@ from powercontext.builtin.runtime._scope_cache import (
 )
 from powercontext.builtin.runtime.decision_model import DecisionModel
 from powercontext.builtin.runtime.errors import InvalidRuntimeRequestError, TopicMemoryProcessingUnavailableError
+from powercontext.builtin.runtime.source_lifecycle import SourceLifecycleApplication
 from powercontext.builtin.runtime.models import (
     ApproveArtifactCandidateRequest,
     CaptureSource,
@@ -911,7 +912,7 @@ class ScopedContextApplication:
 
         The controlled expansion loop lives here. It runs at most ``policy.max_rounds`` extra
         searches, each of which only lowers the admission floor for the families the caller
-        already selected — never a new family, a larger ``limit``, or a different ``mode``.
+        already selected 鈥?never a new family, a larger ``limit``, or a different ``mode``.
         Every gate or expansion error degrades to the round-zero candidate set.
 
         Returns ``(build, effort)``. The RFC 1560 trace is **not** a field of the build:
@@ -1088,7 +1089,7 @@ class ScopedContextApplication:
 
         Candidates accumulate across rounds; only new identities are ever added, so an earlier
         round's candidate is never removed. Any error returns the round-zero candidates unchanged
-        and records ``expansion-failed`` — the gate can never turn a successful prepare into a
+        and records ``expansion-failed`` 鈥?the gate can never turn a successful prepare into a
         failure. For a consistent signal basis, ``candidates_by_round`` counts the *un-truncated*
         accumulated pool (no family is clamped while the gate is consulting it); the Builder
         ceilings are applied once, on the returned candidates only.
@@ -2700,6 +2701,18 @@ class ScopedTopicMemoryApplication:
                         "unit": "topic-memory",
                     },
                 )
+        lifecycle = getattr(self._runtime, "lifecycle", None)
+        if lifecycle is not None:
+            blocked = await lifecycle.unavailable_topic_artifact_ids(self.scope_id)
+            if blocked:
+                kept = tuple(
+                    hit
+                    for hit in result.hits
+                    if str(getattr(getattr(hit, "artifact_ref", None), "artifact_id", None) or "")
+                    not in blocked
+                )
+                if len(kept) != len(result.hits):
+                    result = result.model_copy(update={"hits": kept})
         return result
 
     async def _search_with_embedding(
@@ -3128,6 +3141,7 @@ class BuiltinRuntime:
         self.memory = MemoryApplication(self)
         self.topic_memory = TopicMemoryApplication(self)
         self.records = RecordApplication(self)
+        self.lifecycle = SourceLifecycleApplication(self, getattr(profiles, 'database', None))
         self.prompts = PromptApplication(self)
         self.review = ReviewApplication(self)
         self.skill = SkillApplication(self)
@@ -3618,3 +3632,7 @@ async def _last_changed_entry(service: MemoryService, memory: Memory) -> MemoryE
     entry_id = memory.content.changes[-1].entry_id
     entry = next((item for item in await service.entries(memory) if item.entry_id == entry_id), None)
     return None if entry is None else _entry_record(memory, entry)
+
+
+
+

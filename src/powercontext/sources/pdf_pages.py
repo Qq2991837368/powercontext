@@ -20,6 +20,7 @@ import hashlib
 import io
 import math
 import re
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
@@ -244,8 +245,86 @@ def _page_body(text: str) -> str:
     return body if separator else text
 
 
-def _question_profile(question: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    """Split a natural-language question into content terms and numeric evidence."""
+@dataclass(frozen=True, slots=True)
+class _Question:
+    """Precomputed lexical view of one natural-language question."""
+
+    text: str
+    terms: tuple[str, ...]
+    numbers: tuple[str, ...]
+    tokens: frozenset[str]
+    bigrams: frozenset[tuple[str, str]]
+    phrase: str
+    wants_statement: bool
+    quantitative: bool
+
+
+_QUANTITATIVE_HINTS = frozenset(
+    {
+        "amount",
+        "calculate",
+        "capex",
+        "cost",
+        "costs",
+        "ebitda",
+        "expenditure",
+        "expenditures",
+        "margin",
+        "percent",
+        "percentage",
+        "profit",
+        "quantity",
+        "ratio",
+        "revenue",
+        "revenues",
+        "total",
+        "value",
+    }
+)
+
+# Terms that appear on nearly every filing page; probing them alone returns noise.
+_GENERIC_TERMS = frozenset(
+    {
+        "cash",
+        "company",
+        "cost",
+        "costs",
+        "fiscal",
+        "flow",
+        "flows",
+        "income",
+        "percent",
+        "profit",
+        "revenue",
+        "revenues",
+        "statement",
+        "statements",
+        "total",
+        "value",
+        "year",
+        "years",
+    }
+)
+
+
+def _distinctive(terms: tuple[str, ...], limit: int = 4) -> tuple[str, ...]:
+    """Pick rare, question-defining words worth a dedicated single-term probe."""
+
+    picked = [term for term in terms if len(term) >= 4 and term not in _GENERIC_TERMS]
+    return tuple(picked[:limit])
+
+
+def _windows(terms: tuple[str, ...], size: int = 3, limit: int = 6) -> tuple[str, ...]:
+    """Cover a long question with short focused probes instead of one weak union."""
+
+    if len(terms) <= size:
+        return (" ".join(terms),) if terms else ()
+    span = min(len(terms) - size + 1, limit)
+    return tuple(" ".join(terms[index : index + size]) for index in range(span))
+
+
+def _prepare(question: str) -> _Question:
+    """Split a question into content terms, numeric evidence, and phrase signals."""
 
     tokens = _tokens(question)
     numbers = tuple(dict.fromkeys(token for token in tokens if token.isdigit()))
@@ -255,20 +334,39 @@ def _question_profile(question: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
             continue
         if token not in terms:
             terms.append(token)
-    return tuple(terms), numbers
+    bigrams = frozenset(
+        (left, right)
+        for left, right in zip(tokens, tokens[1:])
+        if len(left) >= 3
+        and len(right) >= 3
+        and left not in _FUNCTION_WORDS
+        and right not in _FUNCTION_WORDS
+    )
+    return _Question(
+        text=question.strip(),
+        terms=tuple(terms),
+        numbers=numbers,
+        tokens=frozenset(tokens),
+        bigrams=bigrams,
+        phrase=_normalized_text(question),
+        wants_statement=bool({"statement", "statements"} & set(tokens)),
+        quantitative=bool(set(tokens) & _QUANTITATIVE_HINTS),
+    )
 
 
-def _query_variants(question: str, terms: tuple[str, ...], numbers: tuple[str, ...]) -> tuple[str, ...]:
+def _query_variants(question: _Question) -> tuple[str, ...]:
     """Build complementary lexical probes so one weak probe cannot hide a page."""
 
-    variants = [question.strip()]
-    if numbers:
-        variants.append(" ".join(numbers))
-    if terms:
-        lead = " ".join(terms[:5])
-        variants.append(f"{' '.join(numbers)} {lead}".strip() if numbers else lead)
-    if len(terms) > 5:
-        variants.append(" ".join(terms[5:10]))
+    variants = [question.text]
+    if question.numbers:
+        variants.append(" ".join(question.numbers))
+    if question.terms:
+        variants.append(" ".join(question.terms[:5]))
+        variants.extend(_windows(question.terms))
+        if question.numbers:
+            variants.append(f"{' '.join(question.numbers)} {' '.join(question.terms[:3])}")
+        # A rare word alone reaches pages that the multi-term admission floor rejects.
+        variants.extend(_distinctive(question.terms))
     unique: list[str] = []
     for variant in variants:
         cleaned = " ".join(variant.split())
@@ -314,28 +412,48 @@ def _restrict_to_named_documents(
     return restricted or items
 
 
-def _score(
-    hit: Any,
-    terms: tuple[str, ...],
-    numbers: tuple[str, ...],
-    weights: dict[str, float],
-    total_weight: float,
-    phrase: str,
-    question_tokens: frozenset[str],
-) -> float:
-    """Rank one candidate page by weighted term coverage, numbers, and document match."""
+_STATEMENT_MARKERS = (
+    "consolidated statement of income",
+    "consolidated statement of cash flows",
+    "consolidated balance sheet",
+    "consolidated statement of comprehensive income",
+)
+
+
+def _score(question: _Question, hit: Any, weights: dict[str, float], total_weight: float) -> float:
+    """Rank one candidate page by weighted terms, phrases, numbers and structure."""
 
     body = _page_body(hit.text)
-    present = set(_tokens(body))
-    matched = sum(weights.get(term, 0.0) for term in terms if term in present)
+    body_tokens = _tokens(body)
+    present = set(body_tokens)
+    matched = sum(weights.get(term, 0.0) for term in question.terms if term in present)
     score = 3.0 * (matched / total_weight if total_weight else 0.0)
-    if numbers:
-        score += 2.5 * len(set(numbers) & _numbers(body)) / len(set(numbers))
-    if _names_document(_document_of(hit.text), question_tokens):
+
+    if question.bigrams:
+        pairs = set(zip(body_tokens, body_tokens[1:]))
+        score += 2.0 * len(question.bigrams & pairs) / len(question.bigrams)
+
+    if question.numbers:
+        wanted = set(question.numbers)
+        score += 2.5 * len(wanted & _numbers(body)) / len(wanted)
+
+    if _names_document(_document_of(hit.text), question.tokens):
         # A scope may mix several filings: the named document must outrank the rest.
         score += 6.0
-    if len(phrase) >= 24 and phrase in _normalized_text(body):
+
+    normalized = _normalized_text(body)
+    if len(question.phrase) >= 24 and question.phrase in normalized:
         score += 1.5
+
+    if question.wants_statement and question.quantitative and any(
+        marker in normalized for marker in _STATEMENT_MARKERS
+    ):
+        score += 2.5
+
+    if question.quantitative and body_tokens:
+        density = sum(1 for token in body_tokens if token.isdigit()) / len(body_tokens)
+        score += min(1.0, density / 0.25)
+
     return score
 
 
@@ -348,14 +466,12 @@ async def search_pdf_pages(memory: Any, question: str, limit: int = 10) -> tuple
     if limit <= 0 or not isinstance(question, str) or not question.strip():
         return ()
 
-    terms, numbers = _question_profile(question)
-    question_tokens = frozenset(_tokens(question))
-    phrase = _normalized_text(question)
+    profile = _prepare(question)
 
     collected: dict[str, tuple[int, Any]] = {}
-    for variant in _query_variants(question, terms, numbers):
+    for variant in _query_variants(profile):
         page = await memory.search(
-            SearchMemoryRequest(query=variant, mode="fts", limit=_POOL_PER_QUERY)
+            SearchMemoryRequest(query=variant, mode="auto", limit=_POOL_PER_QUERY)
         )
         for rank, hit in enumerate(page.hits):
             prior = collected.get(hit.entry_version_id)
@@ -363,9 +479,9 @@ async def search_pdf_pages(memory: Any, question: str, limit: int = 10) -> tuple
                 collected[hit.entry_version_id] = (rank, hit)
 
     if not collected:
-        for probe in (*numbers[:2], *terms[:3]):
+        for probe in (*profile.numbers[:2], *profile.terms[:3]):
             page = await memory.search(
-                SearchMemoryRequest(query=probe, mode="fts", limit=_POOL_PER_QUERY)
+                SearchMemoryRequest(query=probe, mode="auto", limit=_POOL_PER_QUERY)
             )
             for rank, hit in enumerate(page.hits):
                 collected.setdefault(hit.entry_version_id, (rank, hit))
@@ -374,7 +490,7 @@ async def search_pdf_pages(memory: Any, question: str, limit: int = 10) -> tuple
         return ()
 
     pool = list(collected.values())
-    preferred = _restrict_to_named_documents(pool, question_tokens)
+    preferred = _restrict_to_named_documents(pool, profile.tokens)
     if preferred is pool:
         items = pool
     else:
@@ -387,10 +503,10 @@ async def search_pdf_pages(memory: Any, question: str, limit: int = 10) -> tuple
         return ()
 
     total = len(items)
-    document_frequency = dict.fromkeys(terms, 0)
+    document_frequency = dict.fromkeys(profile.terms, 0)
     for _rank, hit in items:
         present = set(_tokens(_page_body(hit.text)))
-        for term in terms:
+        for term in profile.terms:
             if term in present:
                 document_frequency[term] += 1
     weights = {
@@ -400,10 +516,7 @@ async def search_pdf_pages(memory: Any, question: str, limit: int = 10) -> tuple
 
     ranked = sorted(
         items,
-        key=lambda item: (
-            _score(item[1], terms, numbers, weights, total_weight, phrase, question_tokens),
-            -item[0],
-        ),
+        key=lambda item: (_score(profile, item[1], weights, total_weight), -item[0]),
         reverse=True,
     )
 

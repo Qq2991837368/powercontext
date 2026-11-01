@@ -17,6 +17,9 @@
 from __future__ import annotations
 
 import json
+import math
+import re
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from itertools import chain
@@ -43,10 +46,107 @@ from powercontext.builtin.runtime.prepared_text import (
 from powercontext.builtin.runtime.recall_sufficiency import RecallBudgetView
 
 _MIN_TRUNCATED_CONTENT_BYTES = 64
+_MIN_EVIDENCE_FRAGMENT_CHARS = 16
+_MAX_EVIDENCE_DOCUMENTS = 4
 _ELLIPSIS = "…"
 _BEGIN_MARKER = "BEGIN_POWERCONTEXT_PREPARED_CONTEXT_V1"
 _END_MARKER = "END_POWERCONTEXT_PREPARED_CONTEXT_V1"
 _Item = TypeVar("_Item")
+_TERM_PATTERN = re.compile(r"[a-z0-9]+")
+_SENTENCE_END_PATTERN = re.compile(r"[.!?]+[\"')\]]*(?=\s|$)")
+_SENTENCE_ABBREVIATIONS = frozenset({
+    "al",
+    "approx",
+    "ca",
+    "cf",
+    "corp",
+    "dept",
+    "dr",
+    "e.g",
+    "eq",
+    "eqs",
+    "etc",
+    "fig",
+    "figs",
+    "i.e",
+    "inc",
+    "ltd",
+    "mr",
+    "mrs",
+    "ms",
+    "no",
+    "nos",
+    "pp",
+    "prof",
+    "ref",
+    "refs",
+    "st",
+    "u.k",
+    "u.s",
+    "u.s.a",
+    "vs",
+})
+_QUERY_STOPWORDS = frozenset({
+    "a",
+    "all",
+    "also",
+    "an",
+    "and",
+    "any",
+    "are",
+    "as",
+    "at",
+    "be",
+    "been",
+    "being",
+    "but",
+    "by",
+    "can",
+    "did",
+    "do",
+    "does",
+    "for",
+    "from",
+    "had",
+    "has",
+    "have",
+    "here",
+    "in",
+    "is",
+    "it",
+    "its",
+    "may",
+    "might",
+    "more",
+    "most",
+    "not",
+    "of",
+    "on",
+    "or",
+    "our",
+    "such",
+    "than",
+    "that",
+    "the",
+    "their",
+    "then",
+    "there",
+    "these",
+    "this",
+    "those",
+    "to",
+    "using",
+    "via",
+    "was",
+    "we",
+    "were",
+    "which",
+    "who",
+    "whom",
+    "with",
+})
+_BM25_K1 = 1.2
+_BM25_B = 0.75
 
 
 @dataclass(frozen=True)
@@ -56,6 +156,21 @@ class _PreparedContextEntry:
     citation: dict[str, object]
     content: str
     truncated: bool
+    start: int | None = None
+    end: int | None = None
+
+
+@dataclass(frozen=True)
+class _EvidenceSentence:
+    start: int
+    end: int
+
+
+@dataclass(frozen=True)
+class _EvidenceDocument:
+    address: MemoryEntryAddress
+    text: str
+    sentences: tuple[_EvidenceSentence, ...]
 
 
 @dataclass(frozen=True)
@@ -106,6 +221,7 @@ class PreparedContextBuild:
     origins: tuple[PreparedContextOrigin, ...]
     omissions: PreparedContextOmissions = PreparedContextOmissions()
     code_origins: tuple[CodeEvidenceRef, ...] = ()
+    fragments: tuple[PreparedContextFragment, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -118,6 +234,16 @@ class MemoryEntryAddress:
 
 
 PreparedContextOrigin = MemoryCitation | ArtifactRef | MemoryEntryAddress | ArtifactAddress
+
+
+@dataclass(frozen=True)
+class PreparedContextFragment:
+    """One literal span selected out of an exact Memory entry version."""
+
+    address: MemoryEntryAddress
+    start: int
+    end: int
+    text: str
 
 
 @dataclass(frozen=True)
@@ -211,6 +337,13 @@ class PreparedContextBuilder:
         profile_candidates: Sequence[PreparedProfileCandidate] = (),
         code_candidates: Sequence[PreparedCodeCandidate] = (),
     ) -> PreparedContextBuild:
+        self._validate_candidate_limits(memory_candidates, topic_memory_hits, experience_candidates)
+        if request.evidence_selection:
+            return self._select_evidence_result(
+                request=request,
+                current_scope_id=current_scope_id,
+                memory_candidates=memory_candidates,
+            )
         if request.include_code:
 
             def historical(history_request: PrepareContextRequest, entries: int) -> PreparedContextBuild:
@@ -227,13 +360,6 @@ class PreparedContextBuilder:
                 )
 
             return assemble_code(request, code_candidates, self.entry_limit, historical)
-
-        if sum(len(candidates.hits) for candidates in memory_candidates) > self.memory_candidate_limit:
-            raise PreparedContextInvariantError("memory-candidate-limit")
-        if len(topic_memory_hits) > self.topic_memory_candidate_limit:
-            raise PreparedContextInvariantError("topic-memory-candidate-limit")
-        if sum(len(candidates.hits) for candidates in experience_candidates) > self.experience_candidate_limit:
-            raise PreparedContextInvariantError("experience-candidate-limit")
 
         content, origins, omissions = self._select_entries(
             request=request,
@@ -255,6 +381,194 @@ class PreparedContextBuilder:
             origins=origins,
             omissions=omissions,
         )
+
+    def _validate_candidate_limits(
+        self,
+        memory_candidates: Sequence[PreparedMemoryCandidates],
+        topic_memory_hits: Sequence[TopicMemorySearchHit],
+        experience_candidates: Sequence[PreparedExperienceCandidates],
+    ) -> None:
+        if sum(len(candidates.hits) for candidates in memory_candidates) > self.memory_candidate_limit:
+            raise PreparedContextInvariantError("memory-candidate-limit")
+        if len(topic_memory_hits) > self.topic_memory_candidate_limit:
+            raise PreparedContextInvariantError("topic-memory-candidate-limit")
+        if sum(len(candidates.hits) for candidates in experience_candidates) > self.experience_candidate_limit:
+            raise PreparedContextInvariantError("experience-candidate-limit")
+
+    def _select_evidence_result(
+        self,
+        *,
+        request: PrepareContextRequest,
+        current_scope_id: str | None,
+        memory_candidates: Sequence[PreparedMemoryCandidates],
+    ) -> PreparedContextBuild:
+        """Select literal Memory spans by query relevance under the full output budget."""
+
+        documents = self._evidence_documents(memory_candidates, current_scope_id)
+        if not documents:
+            return PreparedContextBuild(context=self.empty(), origins=())
+
+        query_terms = _query_terms(request.query)
+        scores = _evidence_scores(documents, query_terms)
+        sentence_count = {index: len(document.sentences) for index, document in enumerate(documents)}
+        document_scores = {
+            index: max((scores[(index, sentence)] for sentence in range(count)), default=0.0)
+            for index, count in sentence_count.items()
+        }
+        ranked_documents = sorted(
+            (index for index in range(len(documents)) if sentence_count[index]),
+            key=lambda index: (-document_scores[index], index),
+        )
+        relevant_documents = [
+            index for index in ranked_documents if document_scores[index] > 0.0
+        ][: _MAX_EVIDENCE_DOCUMENTS]
+
+        selected: dict[int, set[int]] = {index: set() for index in range(len(documents))}
+        extras: dict[int, list[tuple[int, int]]] = {index: [] for index in range(len(documents))}
+
+        # Rank one best sentence per relevant document first, then everything else by score.
+        candidates: list[tuple[int, int]] = []
+        best_keys: set[tuple[int, int]] = set()
+        for index in relevant_documents:
+            best = max(
+                range(sentence_count[index]),
+                key=lambda sentence: (scores[(index, sentence)], -documents[index].sentences[sentence].start),
+            )
+            candidates.append((index, best))
+            best_keys.add((index, best))
+        rank_position = {index: position for position, index in enumerate(ranked_documents)}
+        candidates.extend(
+            sorted(
+                (
+                    (index, sentence)
+                    for index, document in enumerate(documents)
+                    for sentence in range(len(document.sentences))
+                    if (index, sentence) not in best_keys and scores[(index, sentence)] > 0.0
+                ),
+                key=lambda key: (
+                    -scores[key],
+                    rank_position.get(key[0], len(rank_position)),
+                    documents[key[0]].sentences[key[1]].start,
+                ),
+            )
+        )
+
+        def current() -> tuple[tuple[PreparedContextFragment, ...], tuple[_PreparedContextEntry, ...]]:
+            return _evidence_entries(documents, selected, extras)
+
+        def fits(entries: Sequence[_PreparedContextEntry]) -> bool:
+            return len(_render(entries).encode("utf-8")) <= request.max_bytes
+
+        added = False
+        deferred: list[tuple[int, int]] = []
+        for index, sentence in candidates:
+            selected[index].add(sentence)
+            _, entries = current()
+            if fits(entries):
+                added = True
+            else:
+                selected[index].discard(sentence)
+                deferred.append((index, sentence))
+
+        if not added and not candidates:
+            # Nothing in the query matched any candidate: fall back to the opening literal text.
+            for index in ranked_documents:
+                selected[index].add(0)
+                _, entries = current()
+                if fits(entries):
+                    added = True
+                    break
+                selected[index].discard(0)
+
+        if deferred:
+            # Use the leftover bytes for the highest-ranked span that did not fit whole.
+            query_vocabulary = set(query_terms)
+            for index, sentence in deferred:
+                span = documents[index].sentences[sentence]
+                lower = span.start + _MIN_EVIDENCE_FRAGMENT_CHARS
+                if lower >= span.end:
+                    continue
+                best_end: int | None = None
+                low, high = lower, span.end
+                while low <= high:
+                    middle = (low + high) // 2
+                    extras[index].append((span.start, middle))
+                    _, entries = current()
+                    fits_now = fits(entries)
+                    extras[index].pop()
+                    if fits_now:
+                        best_end = middle
+                        low = middle + 1
+                    else:
+                        high = middle - 1
+                if best_end is None:
+                    continue
+                piece = documents[index].text[span.start:best_end]
+                if query_vocabulary and not query_vocabulary.intersection(_tokens(piece)):
+                    continue
+                extras[index].append((span.start, best_end))
+                break
+
+        fragments, entries = current()
+        if not fragments:
+            return PreparedContextBuild(context=self.empty(), origins=())
+        content = _render(entries)
+        content_bytes = len(content.encode("utf-8"))
+        if content_bytes > request.max_bytes:
+            raise PreparedContextInvariantError("output-budget")
+        return PreparedContextBuild(
+            context=PreparedContext(status="ready", content=content, content_bytes=content_bytes),
+            origins=tuple(entry.origin for entry in entries),
+            fragments=fragments,
+        )
+
+    def _evidence_documents(
+        self,
+        memory_candidates: Sequence[PreparedMemoryCandidates],
+        current_scope_id: str | None,
+    ) -> tuple[_EvidenceDocument, ...]:
+        documents: list[_EvidenceDocument] = []
+        seen: set[tuple[str, str, str, int, str, str]] = set()
+        for candidates in memory_candidates:
+            if candidates.hits and candidates.memory_ref is None:
+                raise PreparedContextInvariantError("memory-ref-missing")
+            scope_id = candidates.scope_id or current_scope_id or ""
+            for hit in candidates.hits:
+                if hit.memory_ref != candidates.memory_ref:
+                    raise PreparedContextInvariantError("memory-ref-mismatch")
+                if (
+                    not hit.entry_id.strip()
+                    or not hit.entry_version_id.strip()
+                    or not hit.text.strip()
+                    or not scope_id
+                ):
+                    continue
+                identity = (
+                    scope_id,
+                    hit.memory_ref.family,
+                    hit.memory_ref.artifact_id,
+                    hit.memory_ref.revision,
+                    hit.entry_id,
+                    hit.entry_version_id,
+                )
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                address = MemoryEntryAddress(
+                    memory=ArtifactAddress(scope_id=scope_id, artifact=hit.memory_ref),
+                    entry_id=hit.entry_id,
+                    entry_version_id=hit.entry_version_id,
+                )
+                documents.append(
+                    _EvidenceDocument(
+                        address=address,
+                        text=hit.text,
+                        sentences=tuple(
+                            _EvidenceSentence(start=start, end=end) for start, end in _sentence_spans(hit.text)
+                        ),
+                    )
+                )
+        return tuple(documents)
 
     def probe_budget(
         self,
@@ -660,6 +974,199 @@ class PreparedContextBuilder:
         return _EntryFit(entry=best)
 
 
+def _evidence_entries(
+    documents: Sequence[_EvidenceDocument],
+    selected: dict[int, set[int]],
+    extras: dict[int, list[tuple[int, int]]],
+) -> tuple[tuple[PreparedContextFragment, ...], tuple[_PreparedContextEntry, ...]]:
+    fragments: list[PreparedContextFragment] = []
+    entries: list[_PreparedContextEntry] = []
+    for index, document in enumerate(documents):
+        for start, end in _merged_spans(document, selected[index], extras[index]):
+            text = document.text[start:end]
+            if not text.strip():
+                continue
+            address = document.address
+            citation = {
+                "scope_id": address.memory.scope_id,
+                "memory_ref": address.memory.artifact.model_dump(mode="json"),
+                "entry_id": address.entry_id,
+                "entry_version_id": address.entry_version_id,
+            }
+            fragments.append(PreparedContextFragment(address=address, start=start, end=end, text=text))
+            entries.append(
+                _PreparedContextEntry(
+                    origin=address,
+                    kind="memory",
+                    citation=citation,
+                    content=text,
+                    truncated=False,
+                    start=start,
+                    end=end,
+                )
+            )
+    return tuple(fragments), tuple(entries)
+
+
+def _merged_spans(
+    document: _EvidenceDocument,
+    selected: set[int],
+    extras: Sequence[tuple[int, int]],
+) -> tuple[tuple[int, int], ...]:
+    spans = [(document.sentences[index].start, document.sentences[index].end) for index in sorted(selected)]
+    spans.extend(extras)
+    spans.sort()
+    merged: list[tuple[int, int]] = []
+    for start, end in spans:
+        if start >= end:
+            continue
+        if merged:
+            previous_start, previous_end = merged[-1]
+            if start <= previous_end or not document.text[previous_end:start].strip():
+                merged[-1] = (previous_start, max(previous_end, end))
+                continue
+        merged.append((start, end))
+    return tuple(merged)
+
+
+def _sentence_spans(text: str) -> tuple[tuple[int, int], ...]:
+    spans: list[tuple[int, int]] = []
+    line_start = 0
+    for line in text.split("\n"):
+        line_end = line_start + len(line)
+        spans.extend(_line_sentence_spans(text, line_start, line_end))
+        line_start = line_end + 1
+    return tuple(spans)
+
+
+def _line_sentence_spans(text: str, start: int, end: int) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    cursor = start
+    for match in _SENTENCE_END_PATTERN.finditer(text, start, end):
+        stop = match.end()
+        index = stop
+        while index < end and text[index].isspace():
+            index += 1
+        if index < end:
+            next_char = text[index]
+            if next_char.isalpha() and next_char.islower():
+                continue
+            if next_char in "([{" and index + 1 < end and text[index + 1].islower():
+                continue
+        if _is_sentence_abbreviation(text, match.start(), start):
+            continue
+        span = _trimmed_span(text, cursor, stop)
+        if span is not None:
+            spans.append(span)
+        cursor = stop
+    span = _trimmed_span(text, cursor, end)
+    if span is not None:
+        spans.append(span)
+    return spans
+
+
+def _trimmed_span(text: str, start: int, end: int) -> tuple[int, int] | None:
+    while start < end and text[start].isspace():
+        start += 1
+    while end > start and text[end - 1].isspace():
+        end -= 1
+    if start >= end:
+        return None
+    return start, end
+
+
+def _is_sentence_abbreviation(text: str, stop: int, line_start: int) -> bool:
+    index = stop
+    while index > line_start and (text[index - 1].isalnum() or text[index - 1] in ".-"):
+        index -= 1
+    word = text[index:stop].lower().strip("\"'()[]")
+    if word in _SENTENCE_ABBREVIATIONS:
+        return True
+    return len(word) == 1 and word.isalpha() and word != "i"
+
+
+def _tokens(text: str) -> tuple[str, ...]:
+    return tuple(_TERM_PATTERN.findall(text.lower()))
+
+
+def _stem(token: str) -> str:
+    """Normalize common English inflections so claims can meet their evidence wording."""
+
+    if len(token) <= 3:
+        return token
+    if token.endswith("ies") and len(token) > 4:
+        token = token[:-3] + "y"
+    elif token.endswith(("ches", "shes", "xes", "zes", "ses")) and len(token) > 4:
+        token = token[:-2]
+    elif token.endswith("s") and not token.endswith(("ss", "us", "is")) and len(token) > 3:
+        token = token[:-1]
+    if token.endswith("ied") and len(token) > 4:
+        token = token[:-3] + "y"
+    elif token.endswith("ing") and len(token) > 5:
+        token = token[:-3]
+    elif token.endswith("ed") and len(token) > 4:
+        token = token[:-2]
+    elif token.endswith("ion") and len(token) > 5:
+        token = token[:-3]
+    if token.endswith("e") and len(token) > 4:
+        token = token[:-1]
+    if len(token) > 3 and token[-1] == token[-2] and token[-1].isalpha():
+        token = token[:-1]
+    return token
+
+
+def _query_terms(query: str) -> tuple[str, ...]:
+    terms = _tokens(query)
+    meaningful = tuple(term for term in terms if term not in _QUERY_STOPWORDS)
+    return tuple(dict.fromkeys(meaningful or terms))
+
+
+def _evidence_scores(
+    documents: Sequence[_EvidenceDocument],
+    query_terms: Sequence[str],
+) -> dict[tuple[int, int], float]:
+    rows: list[tuple[int, int, tuple[str, ...]]] = []
+    for document_index, document in enumerate(documents):
+        for sentence_index, sentence in enumerate(document.sentences):
+            tokens = _tokens(document.text[sentence.start : sentence.end])
+            rows.append((document_index, sentence_index, tokens))
+    if not rows:
+        return {}
+    stems = [tuple(_stem(term) for term in tokens) for _, _, tokens in rows]
+    document_frequency = Counter(term for stemmed in stems for term in set(stemmed))
+    total = len(rows)
+    average_length = sum(len(stemmed) for stemmed in stems) / total or 1.0
+    raw_query = tuple(dict.fromkeys(query_terms))
+    query = tuple(dict.fromkeys(_stem(term) for term in raw_query))
+    inverse_frequency = {
+        term: math.log(
+            1.0 + (total - document_frequency.get(term, 0) + 0.5) / (document_frequency.get(term, 0) + 0.5)
+        )
+        for term in query
+    }
+    total_inverse_frequency = sum(inverse_frequency.values()) or 1.0
+    phrase = " ".join(raw_query)
+    vocabulary = set(query)
+    scores: dict[tuple[int, int], float] = {}
+    for row_index, (document_index, sentence_index, tokens) in enumerate(rows):
+        frequencies = Counter(stems[row_index])
+        length = len(tokens)
+        score = 0.0
+        for term in query:
+            frequency = frequencies.get(term, 0)
+            if frequency:
+                score += inverse_frequency[term] * (frequency * (_BM25_K1 + 1.0)) / (
+                    frequency + _BM25_K1 * (1.0 - _BM25_B + _BM25_B * length / average_length)
+                )
+        if phrase and phrase in " ".join(tokens):
+            score += 0.5 * total_inverse_frequency + 1.0
+        covered = len(vocabulary.intersection(stems[row_index]))
+        if covered:
+            score += 0.1 * total_inverse_frequency * covered / len(query)
+        scores[(document_index, sentence_index)] = score
+    return scores
+
+
 def _interleave(
     memory: Sequence[_PreparedContextEntry],
     topics: Sequence[_PreparedContextEntry],
@@ -715,6 +1222,9 @@ def _render_entry(entry: _PreparedContextEntry) -> dict[str, object]:
         "content": entry.content,
         "truncated": entry.truncated,
     }
+    if entry.start is not None and entry.end is not None:
+        rendered["start"] = entry.start
+        rendered["end"] = entry.end
     if entry.kind != "memory":
         rendered["kind"] = entry.kind
     return rendered

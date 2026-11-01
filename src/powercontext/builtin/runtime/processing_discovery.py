@@ -74,3 +74,25 @@ class SourceProcessingPendingProvider:
                 if intent is None or intent.dirty_generation == intent.clean_generation:
                     await intents.mark_dirty(connection, scope, self._binding)
         return str(rows[-1][0]) if len(rows) == limit else None
+
+    async def count_pending(
+        self, after_scope_id: str | None, limit: int, *, fence: ArtifactProcessingFence
+    ) -> tuple[str | None, tuple[tuple[str, int], ...]]:
+        """Page Journal heads and subtract each binding's last successful cursor."""
+
+        heads = SOURCE_JOURNAL_HEADS_TABLE
+        statement = select(heads.c.scope_id, heads.c.position).order_by(heads.c.scope_id).limit(limit)
+        if after_scope_id is not None:
+            statement = statement.where(heads.c.scope_id > after_scope_id)
+        async with self._database.transaction() as connection:
+            await ArtifactProcessingLeaseRepository().require_fence(connection, fence)
+            rows = (await connection.execute(statement)).all()
+            cursors = await SourceCursorRepository().load_many(
+                connection, [str(scope) for scope, _ in rows], self._binding
+            )
+        pending: list[tuple[str, int]] = []
+        for raw_scope, high in rows:
+            scope = str(raw_scope)
+            stored = cursors.get(scope)
+            pending.append((scope, int(high) - (0 if stored is None else stored.cursor.sequence)))
+        return (str(rows[-1][0]) if len(rows) == limit else None, tuple(pending))

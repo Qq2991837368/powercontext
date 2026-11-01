@@ -21,6 +21,9 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from powercontext.artifacts import ArtifactRef, MemoryCitation
+from powercontext.sources import SourceRef
+
 NodeKind = Literal["source", "memory", "topic"]
 Policy = Literal["all", "any"]
 Purpose = Literal["generation", "audit"]
@@ -92,6 +95,25 @@ def _policy(value: object) -> Policy:
 
 def _fingerprint(event: SourceLifecycleEvent) -> str:
     return f"{event.available}|{event.reason}"
+
+
+def _payload_identity(payload: dict[str, object]) -> tuple[object, ...]:
+    kind = payload.get("kind")
+    data = payload.get("data")
+    values = data if isinstance(data, dict) else {}
+    if kind == SOURCE_KIND:
+        return (kind, values.get("source_type"), values.get("source_id"))
+    if kind == MEMORY_KIND:
+        return (kind, values.get("entry_id"), values.get("entry_version_id"))
+    return (kind, values.get("family"), values.get("artifact_id"), values.get("revision"))
+
+
+def _require_same_payload(
+    node_id: str, payload: dict[str, object], payloads: dict[str, dict[str, object]]
+) -> None:
+    existing = payloads.get(node_id)
+    if existing is not None and _payload_identity(existing) != _payload_identity(payload):
+        raise SourceLifecycleError(f"node {node_id!r} is already registered with a different binding")
 
 
 class LifecycleGraph:
@@ -303,29 +325,37 @@ class ScopedSourceLifecycleApplication:
         self.scope_id = _text("scope_id", scope_id)
 
     async def register_source(self, node_id: object, source_ref: object, *, revision: object = 1) -> None:
+        reference = SourceRef.model_validate(source_ref)
+        await self._require_source(reference)
+        key = _text("node_id", node_id)
+        payload = {"kind": SOURCE_KIND, "data": reference.model_dump(mode="json")}
         graph, payloads = await self._read()
-        payloads[node_id] = {"kind": SOURCE_KIND, "data": source_ref.model_dump(mode="json")}
-        graph.register_source(node_id, revision=revision)
+        _require_same_payload(key, payload, payloads)
+        payloads[key] = payload
+        graph.register_source(key, revision=revision)
         await self._persist(graph, payloads)
 
     async def register_memory(
         self, node_id: object, citation: object, *, parents: object, policy: object
     ) -> None:
-        await self._require_memory(citation)
-        await self._register_derived(node_id, citation, parents, policy, MEMORY_KIND)
+        reference = MemoryCitation.model_validate(citation)
+        await self._require_memory(reference)
+        await self._register_derived(node_id, reference, parents, policy, MEMORY_KIND)
 
     async def register_topic(
         self, node_id: object, reference: object, *, parents: object, policy: object
     ) -> None:
-        await self._require_topic(reference)
-        await self._register_derived(node_id, reference, parents, policy, TOPIC_KIND)
+        topic = ArtifactRef.model_validate(reference)
+        if topic.family != "topic-memory":
+            raise SourceLifecycleError("topic nodes require a Topic Memory ArtifactRef")
+        await self._require_topic(topic)
+        await self._register_derived(node_id, topic, parents, policy, TOPIC_KIND)
 
     async def apply(self, event: SourceLifecycleEvent) -> list[str]:
         graph, payloads = await self._read()
-        before = {node.node_id: node.available for node in graph.nodes()}
         active = graph.apply(event)
         await self._persist(graph, payloads)
-        await self._sync_memory(graph, payloads, before, event.reason)
+        await self._sync_memory(graph, payloads, event.reason)
         return active
 
     async def resolve(self, node_id: object, *, purpose: object = "generation") -> object:
@@ -340,23 +370,40 @@ class ScopedSourceLifecycleApplication:
     async def _register_derived(
         self, node_id: object, reference: object, parents: object, policy: object, kind: str
     ) -> None:
+        key = _text("node_id", node_id)
+        payload = {"kind": kind, "data": reference.model_dump(mode="json")}
         graph, payloads = await self._read()
-        payloads[node_id] = {"kind": kind, "data": reference.model_dump(mode="json")}
-        node = graph.register_derived(node_id, parents, policy=policy, kind=kind)
+        _require_same_payload(key, payload, payloads)
+        payloads[key] = payload
+        node = graph.register_derived(key, parents, policy=policy, kind=kind)
         await self._persist(graph, payloads)
         if kind == MEMORY_KIND and not node.available:
             # Registration itself must honour the parents' current availability.
             await self._apply_memory_state(reference, active=False, reason="registered without support")
 
-    async def _require_memory(self, citation: object) -> None:
+    async def _require_source(self, reference: SourceRef) -> None:
+        try:
+            await self._runtime.records.for_scope(self.scope_id).get_source(
+                reference.source_type, reference.source_id
+            )
+        except (LookupError, ValueError) as error:
+            raise SourceLifecycleError(f"source reference is not readable: {reference.source_id!r}") from error
+
+    async def _require_memory(self, citation: MemoryCitation) -> None:
         from powercontext.builtin.runtime import GetMemoryEntryRequest
 
         memory = self._runtime.memory.for_scope(self.scope_id)
-        await memory.get(GetMemoryEntryRequest(citation=citation))
+        try:
+            await memory.get(GetMemoryEntryRequest(citation=citation))
+        except (LookupError, ValueError) as error:
+            raise SourceLifecycleError(f"memory citation is not readable: {citation.entry_id!r}") from error
 
-    async def _require_topic(self, reference: object) -> None:
+    async def _require_topic(self, reference: ArtifactRef) -> None:
         records = self._runtime.records.for_scope(self.scope_id)
-        await records.get_artifact_revision(reference.family, reference.artifact_id, reference.revision)
+        try:
+            await records.get_artifact_revision(reference.family, reference.artifact_id, reference.revision)
+        except (LookupError, ValueError) as error:
+            raise SourceLifecycleError(f"topic reference is not readable: {reference.artifact_id!r}") from error
 
     async def _read(self) -> tuple[LifecycleGraph, dict[str, dict[str, object]]]:
         table = SOURCE_LIFECYCLE_TABLE
@@ -404,11 +451,13 @@ class ScopedSourceLifecycleApplication:
         self,
         graph: LifecycleGraph,
         payloads: dict[str, dict[str, object]],
-        before: dict[str, bool],
         reason: str,
     ) -> None:
+        # Reconcile every Memory node against the graph. Applying the same target
+        # state twice is a no-op, so a retried event finishes an interrupted
+        # propagation without adding Memory revisions on a successful replay.
         for node in graph.nodes():
-            if node.kind != MEMORY_KIND or before.get(node.node_id) == node.available:
+            if node.kind != MEMORY_KIND:
                 continue
             citation = _model_for(MEMORY_KIND).model_validate(payloads[node.node_id]["data"])
             await self._apply_memory_state(citation, active=node.available, reason=reason)

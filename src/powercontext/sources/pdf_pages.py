@@ -212,6 +212,7 @@ _STATEMENT_BONUS = 2.0
 _STATEMENT_TYPE_BONUS = 4.0
 _RESULTS_BONUS = 2.0
 _BUSINESS_BONUS = 3.0
+_SALES_BRIDGE_BONUS = 6.0
 _BIGRAM_BONUS = 2.0
 _PHRASE_BONUS = 1.5
 _DENSITY_BONUS = 0.5
@@ -455,6 +456,7 @@ class _Question:
     statement_types: frozenset[str]
     driver: bool
     business_overview: bool
+    excludes_mna: bool
 
 
 _QUANTITATIVE_HINTS = frozenset(
@@ -579,6 +581,12 @@ _STATEMENT_TYPE_MARKERS: tuple[tuple[frozenset[str], tuple[str, ...]], ...] = (
 
 _DRIVER_WORDS = frozenset({"drove", "drive", "driven", "driver", "drives"})
 
+# Questions that ask for growth with deal and currency effects stripped out.
+_MNA_TERMS = frozenset(
+    {"acquisition", "acquisitions", "divestiture", "divestitures", "merger", "mergers"}
+)
+_MNA_EXCLUSION_WORDS = frozenset({"exclude", "excluding", "impact", "adjust", "adjusted"})
+
 # Questions that ask for a description of the company instead of a computed figure.
 _BUSINESS_TOPICS = frozenset({"geographie", "geography", "customer", "client"})
 
@@ -634,6 +642,10 @@ def _prepare(question: str) -> _Question:
         business_overview=(
             not quantitative
             and bool(_BUSINESS_TOPICS & stems or {"product", "service"} <= stems)
+        ),
+        excludes_mna=(
+            bool(_MNA_EXCLUSION_WORDS & set(tokens))
+            and ("m&a" in _normalized_text(question) or bool(_MNA_TERMS & set(tokens)))
         ),
     )
 
@@ -795,6 +807,16 @@ def _score(
     if question.business_overview and "item 1. business" in normalized:
         # A describe-the-company question is answered by the business section itself.
         score += _BUSINESS_BONUS
+
+    if (
+        question.excludes_mna
+        and "organic" in normalized
+        and "divestitu" in normalized
+        and "translation" in normalized
+        and ("sales change" in normalized or "net sales change" in normalized)
+    ):
+        # Stripping deal and currency effects is answered by the sales-change bridge table.
+        score += _SALES_BRIDGE_BONUS
 
     if question.quantitative and body_tokens:
         density = sum(1 for token in body_tokens if token.isdigit()) / len(body_tokens)

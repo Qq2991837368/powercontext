@@ -1,0 +1,7 @@
+# command: /root/pc-venv/bin/python -m pytest tests/test_regression.py -q --color=no -p no:cacheprovider
+# cwd: /mnt/d/default-workspace/powercontext/minimax/demo_project
+# started_at: 2026-11-02T15:02:49+00:00
+# exit_code: 0
+
+.....                                                                    [100%]
+5 passed in 0.08s

@@ -1,0 +1,146 @@
+{
+  "context_id": "20261102T150220739369Z",
+  "created_at": "2026-11-02T15:02:20+00:00",
+  "scope_id": "scp_41q2enpf0v584j6y2w30b1r2e8",
+  "task": "实现规格 v2 新增的 R5：min_price 闭区间下界，并与 max_price 组合为闭区间；不得修改测试。",
+  "editable_file": "src/book_filter.py",
+  "corpus_version": 2,
+  "corpus_files": [
+    {
+      "path": "specs/book-filter.md",
+      "kind": "spec",
+      "sha256": "42b3bcfa90a431e7"
+    },
+    {
+      "path": "src/book_filter.py",
+      "kind": "code",
+      "sha256": "d1bc0a168e5121dc"
+    },
+    {
+      "path": "tests/test_regression.py",
+      "kind": "test",
+      "sha256": "00ed0349a1ebc54c"
+    },
+    {
+      "path": "tests/test_target_feature.py",
+      "kind": "test",
+      "sha256": "f000cd7792014a22"
+    },
+    {
+      "path": "tests/test_target_price_range.py",
+      "kind": "test",
+      "sha256": "8355055fae453f38"
+    }
+  ],
+  "state": {
+    "created_at": "2026-11-02T15:01:55+00:00",
+    "notes": "follow-up task after R5 spec update",
+    "scope_id": "scp_41q2enpf0v584j6y2w30b1r2e8",
+    "seq": 3,
+    "status": "planned",
+    "summary": "规格 v2 已重新导入，任务 2 登记",
+    "task": "实现规格 v2 新增的 R5：min_price 闭区间下界，并与 max_price 组合为闭区间；不得修改测试。",
+    "verification": null,
+    "artifact_id": "art_e212f54b806c4940aeadbac4bd1d8726"
+  },
+  "state_history": [
+    {
+      "created_at": "2026-11-02T15:01:55+00:00",
+      "notes": "follow-up task after R5 spec update",
+      "scope_id": "scp_41q2enpf0v584j6y2w30b1r2e8",
+      "seq": 3,
+      "status": "planned",
+      "summary": "规格 v2 已重新导入，任务 2 登记",
+      "task": "实现规格 v2 新增的 R5：min_price 闭区间下界，并与 max_price 组合为闭区间；不得修改测试。",
+      "verification": null,
+      "artifact_id": "art_e212f54b806c4940aeadbac4bd1d8726"
+    },
+    {
+      "created_at": "2026-11-02T15:00:14+00:00",
+      "notes": null,
+      "scope_id": "scp_41q2enpf0v584j6y2w30b1r2e8",
+      "seq": 2,
+      "status": "done",
+      "summary": "Implemented src/book_filter.py with MiniMax and verified target + regression tests.",
+      "task": "实现规格 v1 的 R2/R3/R4：max_price 闭区间上界、tags 全匹配、默认排除缺货；不得修改测试。",
+      "verification": {
+        "attempt": 2,
+        "before": {
+          "exit_code": 1,
+          "log": "minimax/records/test-runs/20261102T145930828226Z-before-target.log",
+          "summary": "0 passed, 5 failed, 0 errors"
+        },
+        "diff": "minimax/records/patches/20261102T145930828226Z-book_filter.diff",
+        "minimax_session": "minimax/records/minimax-sessions/20261102T145930828226Z-attempt2.json",
+        "regression": {
+          "exit_code": 0,
+          "log": "minimax/records/test-runs/20261102T145930828226Z-attempt2-regression.log",
+          "summary": "5 passed, 0 failed, 0 errors"
+        },
+        "snapshots": [
+          "minimax/records/snapshots/20261102T145930828226Z-before.py",
+          "minimax/records/snapshots/20261102T145930828226Z-after.py"
+        ],
+        "target": {
+          "exit_code": 0,
+          "log": "minimax/records/test-runs/20261102T145930828226Z-attempt2-target.log",
+          "summary": "5 passed, 0 failed, 0 errors"
+        }
+      },
+      "artifact_id": "art_f37ba5ee22944b65b587ca10e76694f0"
+    },
+    {
+      "created_at": "2026-11-02T14:57:03+00:00",
+      "notes": "initial empty verification state",
+      "scope_id": "scp_41q2enpf0v584j6y2w30b1r2e8",
+      "seq": 1,
+      "status": "planned",
+      "summary": "任务已登记，等待构建上下文",
+      "task": "实现规格 v1 的 R2/R3/R4：max_price 闭区间上界、tags 全匹配、默认排除缺货；不得修改测试。",
+      "verification": null,
+      "artifact_id": "art_ad863955e0484eac91780e4cac4308ca"
+    }
+  ],
+  "working_file": {
+    "kind": "code",
+    "source": "src/book_filter.py",
+    "artifact_id": "art_a329a19bfc544b7fbcacbd70e0428cb7",
+    "revision": 1,
+    "text": "[[SOURCE src/book_filter.py]]\n\"\"\"Mini catalogue service: book listing filter.\n\nThe module is intentionally small so that the SDD workflow can show a complete\nspec -> context -> code-change -> verification loop against a real database.\n\"\"\"\n\nfrom __future__ import annotations\n\nfrom collections.abc import Iterable, Mapping\nfrom typing import Any\n\n__all__ = [\"filter_books\"]\n\n\ndef _is_number(value: Any) -> bool:\n    \"\"\"Return ``True`` for real numeric values (booleans are not prices).\"\"\"\n    return isinstance(value, (int, float)) and not isinstance(value, bool)\n\n\ndef _as_tag_list(value: Any) -> list[Any]:\n    \"\"\"Normalise a tags container into a plain list of tag values.\"\"\"\n    if value is None:\n        return []\n    if isinstance(value, str):\n        return [value]\n    if isinstance(value, (list, tuple, set, frozenset)):\n        return list(value)\n    try:\n        return list(value)\n    except TypeError:\n        return [value]\n\n\ndef filter_books(\n    books: Iterable[Mapping[str, Any]],\n    *,\n    keyword: str | None = None,\n    max_price: float | None = None,\n    tags: Iterable[str] | None = None,\n    include_out_of_stock: bool = False,\n) -> list[dict[str, Any]]:\n    \"\"\"Filter catalogue books according to spec v1 (R1-R4).\n\n    * R1: ``keyword`` matches ``title`` case-insensitively; ``None``/empty\n      disables the filter.\n    * R2: ``max_price`` keeps books with ``price <= max_price`` (inclusive);\n      books without a numeric price are dropped when the filter is enabled.\n    * R3: ``tags`` uses all-of semantics; books lacking a ``tags`` field are\n      dropped when the filter is enabled.\n    * R4: books explicitly marked ``in_stock=False`` are excluded unless\n      ``include_out_of_stock=True`` is passed.\n\n    The input objects are never mutated: every returned row is a shallow copy\n    and the input ordering is preserved.\n    \"\"\"\n    needle = (keyword or \"\").strip().lower()\n    requested_tags = _as_tag_list(tags) if tags is not None else []\n    filter_by_price = max_price is not None\n    filter_by_tags = bool(requested_tags)\n\n    selected: list[dict[str, Any]] = []\n    for book in books:\n        title = str(book.get(\"title\", \"\"))\n        if needle and needle not in title.lower():\n            continue\n\n        if filter_by_price:\n            price = book.get(\"price\")\n            if not _is_number(price) or price > max_price:\n                continue\n\n        if filter_by_tags:\n            if \"tags\" not in book:\n                continue\n            book_tags = _as_tag_list(book.get(\"tags\"))\n            if not all(tag in book_tags for tag in requested_tags):\n                continue\n\n        if not include_out_of_stock and book.get(\"in_stock\", True) is False:\n            continue\n\n        selected.append(dict(book))\n    return selected"
+  },
+  "retrieval": {
+    "mode": "hybrid",
+    "limit_per_kind": 3,
+    "hits": {
+      "spec": [
+        {
+          "kind": "spec",
+          "source": "specs/book-filter.md",
+          "artifact_id": "art_c9d3f06963914dd5929fd61d897f8ccc",
+          "revision": 1,
+          "score": 0.032787,
+          "matched_by": [
+            "text",
+            "vector"
+          ],
+          "text": "[[SOURCE specs/book-filter.md]]\n# 图书过滤器规格（Book Filter Specification）\n\nVersion: v2\nStatus: active\nOwner: catalogue-team\n\n## R1 关键词匹配\n\n`filter_books(books, keyword=...)` 返回 `title` 中包含关键词的图书，大小写不敏感；\n`keyword` 为 `None` 或空字符串时不做过滤。结果保持输入顺序。\n\n## R2 最高价格（包含边界）\n\n传入 `max_price` 时，仅保留 `price <= max_price` 的图书，边界值必须包含。\n`price` 缺失或不是数字的图书在启用该过滤时一律排除。\n\n## R3 标签全匹配\n\n传入 `tags` 时，图书必须包含全部请求标签（all-of 语义）。\n`tags` 为 `None` 或空序列时不做过滤；缺少 `tags` 字段的图书在启用该过滤时排除。\n\n## R4 库存可见性\n\n默认排除 `in_stock` 显式为 `False` 的图书；`in_stock` 缺失视为有货。\n调用方传入 `include_out_of_stock=True` 时保留缺货图书。\n\n## R5 最低价格（包含边界，v2 新增）\n\n传入 `min_price` 时，仅保留 `price >= min_price` 的图书，边界值必须包含。\n`price` 缺失或不是数字的图书在启用该过滤时一律排除。\n`min_price` 与 `max_price` 同时存在时构成闭区间 `[min_price, max_price]`，\n闭区间内没有图书时返回空列表。\n\n## N1 通用约束\n\n- 不修改输入对象，返回结果为浅拷贝（保留调用方附加字段）。\n- 结果顺序与输入顺序一致。\n- 不修改测试与规格文件来“适配”实现；实现必须满足上述规则。"
+        }
+      ],
+      "code": [],
+      "test": [
+        {
+          "kind": "test",
+          "source": "tests/test_target_price_range.py",
+          "artifact_id": "art_d6e2723053894026a974c3e1f5a47586",
+          "revision": 1,
+          "score": 0.016393,
+          "matched_by": [
+            "text"
+          ],
+          "text": "[[SOURCE tests/test_target_price_range.py]]\n\"\"\"Target tests for spec v2 requirement R5 (min_price).\"\"\"\n\nfrom src.book_filter import filter_books\n\nBOOKS = [\n    {\"id\": \"b1\", \"title\": \"Clean Code\", \"price\": 45.0, \"tags\": [\"engineering\", \"classic\"], \"in_stock\": True},\n    {\"id\": \"b2\", \"title\": \"Clean Architecture\", \"price\": 59.0, \"tags\": [\"engineering\"], \"in_stock\": True},\n    {\"id\": \"b3\", \"title\": \"Refactoring\", \"price\": 60.0, \"tags\": [\"engineering\", \"classic\"], \"in_stock\": False},\n    {\"id\": \"b4\", \"title\": \"Dune\", \"price\": 30.0, \"tags\": [\"fiction\"], \"in_stock\": True},\n    {\"id\": \"b5\", \"title\": \"Untitled Draft\", \"tags\": [\"engineering\"], \"in_stock\": True},\n    {\"id\": \"b6\", \"title\": \"Legacy Notes\", \"price\": 12.0, \"tags\": [\"reference\"], \"promoted\": True},\n]\n\n\ndef ids(rows):\n    return [row[\"id\"] for row in rows]\n\n\ndef test_min_price_is_inclusive_and_excludes_missing_price():\n    rows = filter_books(BOOKS, min_price=45.0, include_out_of_stock=True)\n    assert ids(rows) == [\"b1\", \"b2\", \"b3\"]\n\n\ndef test_price_range_is_a_closed_interval():\n    rows = filter_books(BOOKS, min_price=45.0, max_price=59.0, include_out_of_stock=True)\n    assert ids(rows) == [\"b1\", \"b2\"]\n\n\ndef test_empty_price_range_returns_no_rows():\n    rows = filter_books(BOOKS, min_price=61.0, max_price=70.0, include_out_of_stock=True)\n    assert rows == []"
+        }
+      ]
+    }
+  },
+  "prompt": "# Role\nYou are the development assistant in a spec-driven workflow. The specification, code,\nand tests below were retrieved from the project database and must drive your change.\n\n# Business task\n实现规格 v2 新增的 R5：min_price 闭区间下界，并与 max_price 组合为闭区间；不得修改测试。\n\n# Hard rules\n- Modify only `src/book_filter.py`.\n- Do not modify tests, specifications, or expected results.\n- Keep existing public behaviour compatible with the regression tests.\n- Return the complete new file content, not a diff.\n\n# Current task state (PowerContext)\nscope: scp_41q2enpf0v584j6y2w30b1r2e8\n- seq: 3\n- status: planned\n- summary: 规格 v2 已重新导入，任务 2 登记\n- artifact: art_e212f54b806c4940aeadbac4bd1d8726\n- created_at: 2026-11-02T15:01:55+00:00\n- notes: follow-up task after R5 spec update\n\nEarlier states:\n- seq 2 [done] Implemented src/book_filter.py with MiniMax and verified target + regression tests. (artifact art_f37ba5ee22944b65b587ca10e76694f0)\n- seq 1 [planned] 任务已登记，等待构建上下文 (artifact art_ad863955e0484eac91780e4cac4308ca)\n\n# Working file (exact revision read from seekdb)\n### src/book_filter.py (artifact art_a329a19bfc544b7fbcacbd70e0428cb7, revision 1)\n\"\"\"Mini catalogue service: book listing filter.\n\nThe module is intentionally small so that the SDD workflow can show a complete\nspec -> context -> code-change -> verification loop against a real database.\n\"\"\"\n\nfrom __future__ import annotations\n\nfrom collections.abc import Iterable, Mapping\nfrom typing import Any\n\n__all__ = [\"filter_books\"]\n\n\ndef _is_number(value: Any) -> bool:\n    \"\"\"Return ``True`` for real numeric values (booleans are not prices).\"\"\"\n    return isinstance(value, (int, float)) and not isinstance(value, bool)\n\n\ndef _as_tag_list(value: Any) -> list[Any]:\n    \"\"\"Normalise a tags container into a plain list of tag values.\"\"\"\n    if value is None:\n        return []\n    if isinstance(value, str):\n        return [value]\n    if isinstance(value, (list, tuple, set, frozenset)):\n        return list(value)\n    try:\n        return list(value)\n    except TypeError:\n        return [value]\n\n\ndef filter_books(\n    books: Iterable[Mapping[str, Any]],\n    *,\n    keyword: str | None = None,\n    max_price: float | None = None,\n    tags: Iterable[str] | None = None,\n    include_out_of_stock: bool = False,\n) -> list[dict[str, Any]]:\n    \"\"\"Filter catalogue books according to spec v1 (R1-R4).\n\n    * R1: ``keyword`` matches ``title`` case-insensitively; ``None``/empty\n      disables the filter.\n    * R2: ``max_price`` keeps books with ``price <= max_price`` (inclusive);\n      books without a numeric price are dropped when the filter is enabled.\n    * R3: ``tags`` uses all-of semantics; books lacking a ``tags`` field are\n      dropped when the filter is enabled.\n    * R4: books explicitly marked ``in_stock=False`` are excluded unless\n      ``include_out_of_stock=True`` is passed.\n\n    The input objects are never mutated: every returned row is a shallow copy\n    and the input ordering is preserved.\n    \"\"\"\n    needle = (keyword or \"\").strip().lower()\n    requested_tags = _as_tag_list(tags) if tags is not None else []\n    filter_by_price = max_price is not None\n    filter_by_tags = bool(requested_tags)\n\n    selected: list[dict[str, Any]] = []\n    for book in books:\n        title = str(book.get(\"title\", \"\"))\n        if needle and needle not in title.lower():\n            continue\n\n        if filter_by_price:\n            price = book.get(\"price\")\n            if not _is_number(price) or price > max_price:\n                continue\n\n        if filter_by_tags:\n            if \"tags\" not in book:\n                continue\n            book_tags = _as_tag_list(book.get(\"tags\"))\n            if not all(tag in book_tags for tag in requested_tags):\n                continue\n\n        if not include_out_of_stock and book.get(\"in_stock\", True) is False:\n            continue\n\n        selected.append(dict(book))\n    return selected\n\n# Engineering context (seekdb corpus v2, hybrid retrieval)\n\n## Specifications\n### specs/book-filter.md (artifact art_c9d3f06963914dd5929fd61d897f8ccc, score 0.032787, matched_by text, vector)\n# 图书过滤器规格（Book Filter Specification）\n\nVersion: v2\nStatus: active\nOwner: catalogue-team\n\n## R1 关键词匹配\n\n`filter_books(books, keyword=...)` 返回 `title` 中包含关键词的图书，大小写不敏感；\n`keyword` 为 `None` 或空字符串时不做过滤。结果保持输入顺序。\n\n## R2 最高价格（包含边界）\n\n传入 `max_price` 时，仅保留 `price <= max_price` 的图书，边界值必须包含。\n`price` 缺失或不是数字的图书在启用该过滤时一律排除。\n\n## R3 标签全匹配\n\n传入 `tags` 时，图书必须包含全部请求标签（all-of 语义）。\n`tags` 为 `None` 或空序列时不做过滤；缺少 `tags` 字段的图书在启用该过滤时排除。\n\n## R4 库存可见性\n\n默认排除 `in_stock` 显式为 `False` 的图书；`in_stock` 缺失视为有货。\n调用方传入 `include_out_of_stock=True` 时保留缺货图书。\n\n## R5 最低价格（包含边界，v2 新增）\n\n传入 `min_price` 时，仅保留 `price >= min_price` 的图书，边界值必须包含。\n`price` 缺失或不是数字的图书在启用该过滤时一律排除。\n`min_price` 与 `max_price` 同时存在时构成闭区间 `[min_price, max_price]`，\n闭区间内没有图书时返回空列表。\n\n## N1 通用约束\n\n- 不修改输入对象，返回结果为浅拷贝（保留调用方附加字段）。\n- 结果顺序与输入顺序一致。\n- 不修改测试与规格文件来“适配”实现；实现必须满足上述规则。\n\n## Source code\n(no additional hits)\n\n## Tests\n### tests/test_target_price_range.py (artifact art_d6e2723053894026a974c3e1f5a47586, score 0.016393, matched_by text)\n\"\"\"Target tests for spec v2 requirement R5 (min_price).\"\"\"\n\nfrom src.book_filter import filter_books\n\nBOOKS = [\n    {\"id\": \"b1\", \"title\": \"Clean Code\", \"price\": 45.0, \"tags\": [\"engineering\", \"classic\"], \"in_stock\": True},\n    {\"id\": \"b2\", \"title\": \"Clean Architecture\", \"price\": 59.0, \"tags\": [\"engineering\"], \"in_stock\": True},\n    {\"id\": \"b3\", \"title\": \"Refactoring\", \"price\": 60.0, \"tags\": [\"engineering\", \"classic\"], \"in_stock\": False},\n    {\"id\": \"b4\", \"title\": \"Dune\", \"price\": 30.0, \"tags\": [\"fiction\"], \"in_stock\": True},\n    {\"id\": \"b5\", \"title\": \"Untitled Draft\", \"tags\": [\"engineering\"], \"in_stock\": True},\n    {\"id\": \"b6\", \"title\": \"Legacy Notes\", \"price\": 12.0, \"tags\": [\"reference\"], \"promoted\": True},\n]\n\n\ndef ids(rows):\n    return [row[\"id\"] for row in rows]\n\n\ndef test_min_price_is_inclusive_and_excludes_missing_price():\n    rows = filter_books(BOOKS, min_price=45.0, include_out_of_stock=True)\n    assert ids(rows) == [\"b1\", \"b2\", \"b3\"]\n\n\ndef test_price_range_is_a_closed_interval():\n    rows = filter_books(BOOKS, min_price=45.0, max_price=59.0, include_out_of_stock=True)\n    assert ids(rows) == [\"b1\", \"b2\"]\n\n\ndef test_empty_price_range_returns_no_rows():\n    rows = filter_books(BOOKS, min_price=61.0, max_price=70.0, include_out_of_stock=True)\n    assert rows == []\n\n# Output format\n<<<FILE src/book_filter.py>>>\n<complete new file content>\n<<<END>>>\n\nReturn only the marker block. No commentary outside the markers."
+}

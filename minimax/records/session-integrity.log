@@ -1,0 +1,14 @@
+[task1] session=20261102T145930828226Z-attempt2.json
+  model=MiniMax-M3.1-Flash endpoint=https://api.minimaxi.com/v1/chat/completions finish=stop
+  response_id=0737d86b2e00f7789bfeaf6e8e429512
+  usage={"completion_tokens": 3011, "completion_tokens_details": {"reasoning_tokens": 2361}, "prompt_tokens": 1674, "prompt_tokens_details": {"cached_tokens": 128}, "total_characters": 0, "total_tokens": 4685}
+  context_id=20261102T145823506159Z corpus_version=1 state_seq=1
+  candidate_matches_after_snapshot=True
+
+[task2] session=20261102T150240632353Z-attempt1.json
+  model=MiniMax-M3.1-Flash endpoint=https://api.minimaxi.com/v1/chat/completions finish=stop
+  response_id=0737d911fa8278d90e148672c83752d8
+  usage={"completion_tokens": 1072, "completion_tokens_details": {"reasoning_tokens": 330}, "prompt_tokens": 2162, "prompt_tokens_details": {"cached_tokens": 189}, "total_characters": 0, "total_tokens": 3234}
+  context_id=20261102T150220739369Z corpus_version=2 state_seq=3
+  candidate_matches_after_snapshot=True
+

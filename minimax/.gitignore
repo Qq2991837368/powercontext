@@ -1,0 +1,9 @@
+# Python / local runtime
+.state/
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+
+# Generated test artefacts
+demo_project/.pytest_cache/

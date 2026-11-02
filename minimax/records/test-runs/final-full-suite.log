@@ -1,0 +1,7 @@
+# command: python -m pytest tests -q --color=no -p no:cacheprovider
+# cwd: demo_project
+# started_at: 2026-11-02T15:03:18Z
+
+.............                                                            [100%]
+13 passed in 0.16s
+# exit_code: 0

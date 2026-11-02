@@ -1,0 +1,36 @@
+# command: /root/pc-venv/bin/python -m pytest tests/test_target_price_range.py -q --color=no -p no:cacheprovider
+# cwd: /mnt/d/default-workspace/powercontext/minimax/demo_project
+# started_at: 2026-11-02T15:02:40+00:00
+# exit_code: 1
+
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_min_price_is_inclusive_and_excludes_missing_price ____________
+
+    def test_min_price_is_inclusive_and_excludes_missing_price():
+>       rows = filter_books(BOOKS, min_price=45.0, include_out_of_stock=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: filter_books() got an unexpected keyword argument 'min_price'
+
+tests/test_target_price_range.py:20: TypeError
+____________________ test_price_range_is_a_closed_interval _____________________
+
+    def test_price_range_is_a_closed_interval():
+>       rows = filter_books(BOOKS, min_price=45.0, max_price=59.0, include_out_of_stock=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: filter_books() got an unexpected keyword argument 'min_price'
+
+tests/test_target_price_range.py:25: TypeError
+____________________ test_empty_price_range_returns_no_rows ____________________
+
+    def test_empty_price_range_returns_no_rows():
+>       rows = filter_books(BOOKS, min_price=61.0, max_price=70.0, include_out_of_stock=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: filter_books() got an unexpected keyword argument 'min_price'
+
+tests/test_target_price_range.py:30: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_target_price_range.py::test_min_price_is_inclusive_and_excludes_missing_price
+FAILED tests/test_target_price_range.py::test_price_range_is_a_closed_interval
+FAILED tests/test_target_price_range.py::test_empty_price_range_returns_no_rows
+3 failed in 0.14s

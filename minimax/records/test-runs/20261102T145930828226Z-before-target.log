@@ -1,0 +1,63 @@
+# command: /root/pc-venv/bin/python -m pytest tests/test_target_feature.py -q --color=no -p no:cacheprovider
+# cwd: /mnt/d/default-workspace/powercontext/minimax/demo_project
+# started_at: 2026-11-02T14:59:30+00:00
+# exit_code: 1
+
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+____________ test_max_price_is_inclusive_and_excludes_missing_price ____________
+
+    def test_max_price_is_inclusive_and_excludes_missing_price():
+>       rows = filter_books(BOOKS, max_price=59.0, include_out_of_stock=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: filter_books() got an unexpected keyword argument 'max_price'
+
+tests/test_target_feature.py:20: TypeError
+____________________ test_tags_require_all_requested_values ____________________
+
+    def test_tags_require_all_requested_values():
+>       rows = filter_books(BOOKS, tags=["engineering", "classic"], include_out_of_stock=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: filter_books() got an unexpected keyword argument 'tags'
+
+tests/test_target_feature.py:25: TypeError
+____________________ test_out_of_stock_excluded_by_default _____________________
+
+    def test_out_of_stock_excluded_by_default():
+        rows = filter_books(BOOKS)
+>       assert ids(rows) == ["b1", "b2", "b4", "b5", "b6"]
+E       AssertionError: assert ['b1', 'b2', ...', 'b5', 'b6'] == ['b1', 'b2', 'b4', 'b5', 'b6']
+E         
+E         At index 2 diff: 'b3' != 'b4'
+E         Left contains one more item: 'b6'
+E         Use -v to get more diff
+
+tests/test_target_feature.py:31: AssertionError
+_______________________ test_include_out_of_stock_opt_in _______________________
+
+    def test_include_out_of_stock_opt_in():
+>       rows = filter_books(BOOKS, include_out_of_stock=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: filter_books() got an unexpected keyword argument 'include_out_of_stock'
+
+tests/test_target_feature.py:35: TypeError
+____________________________ test_combined_filters _____________________________
+
+    def test_combined_filters():
+>       rows = filter_books(
+            BOOKS,
+            keyword="clean",
+            max_price=59.0,
+            tags=["engineering"],
+            include_out_of_stock=True,
+        )
+E       TypeError: filter_books() got an unexpected keyword argument 'max_price'
+
+tests/test_target_feature.py:40: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_target_feature.py::test_max_price_is_inclusive_and_excludes_missing_price
+FAILED tests/test_target_feature.py::test_tags_require_all_requested_values
+FAILED tests/test_target_feature.py::test_out_of_stock_excluded_by_default - ...
+FAILED tests/test_target_feature.py::test_include_out_of_stock_opt_in - TypeE...
+FAILED tests/test_target_feature.py::test_combined_filters - TypeError: filte...
+5 failed in 0.14s

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PaperLens · 把文献检索变成可追溯的证据包</title>
+  <meta name="description" content="PaperLens 是一个面向科研阅读的本地证据检索助手：导入论文摘要语料，用 seekdb 混合检索找到证据，用 PowerContext 记住研究判断。">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="./assets/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="site-header">
+    <nav class="nav wrap" aria-label="主导航">
+      <a class="wordmark" href="#top">PaperLens</a>
+      <ul class="nav-links">
+        <li><a href="#demo">演示</a></li>
+        <li><a href="#corpus">语料</a></li>
+        <li><a href="#records">记录</a></li>
+        <li><a href="#start">开始</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap">
+        <p class="eyebrow">Qoder × OceanBase 2026 竞赛作品</p>
+        <h1 id="hero-title">PaperLens</h1>
+        <p class="hero-subtitle">把文献检索变成可追溯的证据包</p>
+        <p class="hero-lede">PaperLens 是一个面向科研阅读的本地证据检索助手：导入论文摘要语料，用 seekdb 混合检索找到证据，用 PowerContext 记住研究判断。</p>
+        <dl class="hero-stats" aria-label="项目概览">
+          <div class="hero-stat">
+            <dt>论文数</dt>
+            <dd id="stat-papers">—</dd>
+          </div>
+          <div class="hero-stat">
+            <dt>证据块数</dt>
+            <dd id="stat-chunks">—</dd>
+          </div>
+          <div class="hero-stat">
+            <dt>案例数</dt>
+            <dd id="stat-cases">—</dd>
+          </div>
+          <div class="hero-stat">
+            <dt>外部 API 依赖</dt>
+            <dd id="stat-api">0</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="section" id="why" aria-labelledby="why-title">
+      <div class="wrap">
+        <h2 id="why-title">为什么需要它</h2>
+        <div class="card-grid card-grid-3">
+          <article class="panel">
+            <h3>找不到出处</h3>
+            <p>结论听起来合理，却无法定位到论文里的具体句子和上下文。</p>
+          </article>
+          <article class="panel">
+            <h3>覆盖不全</h3>
+            <p>只搜关键词容易漏掉同义表述，单篇精读又难以覆盖整个语料库。</p>
+          </article>
+          <article class="panel">
+            <h3>读完就忘</h3>
+            <p>研究中的取舍和排除条件散落在笔记里，下次检索又要重新判断。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="workflow" aria-labelledby="workflow-title">
+      <div class="wrap">
+        <h2 id="workflow-title">工作流</h2>
+        <figure class="workflow-card">
+          <div class="workflow-scroll" tabindex="0" role="group" aria-label="工作流图，窄屏可横向滚动">
+            <svg class="workflow-svg" viewBox="0 0 952 250" role="img" aria-labelledby="workflow-svg-title workflow-svg-desc">
+              <title id="workflow-svg-title">PaperLens 工作流</title>
+              <desc id="workflow-svg-desc">论文语料、解析切块、seekdb 索引、混合检索、RRF 重排、证据包六个步骤，研究记忆回写形成闭环。</desc>
+              <defs>
+                <marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#0f766e"></path>
+                </marker>
+              </defs>
+              <g class="flow-links" fill="none" stroke="#0f766e" stroke-width="1.5">
+                <line x1="150" y1="94" x2="166" y2="94" marker-end="url(#flow-arrow)"></line>
+                <line x1="308" y1="94" x2="324" y2="94" marker-end="url(#flow-arrow)"></line>
+                <line x1="466" y1="94" x2="482" y2="94" marker-end="url(#flow-arrow)"></line>
+                <line x1="624" y1="94" x2="640" y2="94" marker-end="url(#flow-arrow)"></line>
+                <line x1="782" y1="94" x2="798" y2="94" marker-end="url(#flow-arrow)"></line>
+              </g>
+              <g class="flow-node">
+                <rect x="12" y="54" width="138" height="80" rx="10"></rect>
+                <text class="flow-step" x="28" y="78">01</text>
+                <text class="flow-label" x="81" y="110" text-anchor="middle">论文语料</text>
+              </g>
+              <g class="flow-node">
+                <rect x="170" y="54" width="138" height="80" rx="10"></rect>
+                <text class="flow-step" x="186" y="78">02</text>
+                <text class="flow-label" x="239" y="110" text-anchor="middle">解析切块</text>
+              </g>
+              <g class="flow-node">
+                <rect x="328" y="54" width="138" height="80" rx="10"></rect>
+                <text class="flow-step" x="344" y="78">03</text>
+                <text class="flow-label" x="397" y="110" text-anchor="middle">seekdb 索引</text>
+              </g>
+              <g class="flow-node">
+                <rect x="486" y="54" width="138" height="80" rx="10"></rect>
+                <text class="flow-step" x="502" y="78">04</text>
+                <text class="flow-label" x="555" y="110" text-anchor="middle">混合检索</text>
+              </g>
+              <g class="flow-node">
+                <rect x="644" y="54" width="138" height="80" rx="10"></rect>
+                <text class="flow-step" x="660" y="78">05</text>
+                <text class="flow-label" x="713" y="110" text-anchor="middle">RRF 重排</text>
+              </g>
+              <g class="flow-node flow-node-end">
+                <rect x="802" y="54" width="138" height="80" rx="10"></rect>
+                <text class="flow-step" x="818" y="78">06</text>
+                <text class="flow-label" x="871" y="110" text-anchor="middle">证据包</text>
+              </g>
+              <path class="flow-loop" d="M871 134 V214 H81 V134" fill="none" stroke="#87a8a3" stroke-width="1.5" stroke-dasharray="6 6" marker-end="url(#flow-arrow)"></path>
+              <rect x="414" y="198" width="124" height="32" rx="16" fill="#fffdf9"></rect>
+              <text class="flow-loop-label" x="476" y="219" text-anchor="middle">研究记忆回写</text>
+            </svg>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="demo" aria-labelledby="demo-title">
+      <div class="wrap">
+        <h2 id="demo-title">演示</h2>
+        <p class="demo-status" id="demo-status" role="status" hidden></p>
+        <div class="tabs" id="demo-tabs" role="tablist" aria-label="演示案例"></div>
+        <div id="demo-panels"></div>
+      </div>
+    </section>
+
+    <section class="section" id="corpus" aria-labelledby="corpus-title">
+      <div class="wrap">
+        <h2 id="corpus-title">语料库</h2>
+        <div class="table-card">
+          <table class="corpus-table">
+            <caption class="visually-hidden">论文语料库清单</caption>
+            <thead>
+              <tr>
+                <th scope="col">论文</th>
+                <th scope="col">年份</th>
+                <th scope="col">发表</th>
+                <th scope="col">标签</th>
+                <th scope="col">证据块</th>
+              </tr>
+            </thead>
+            <tbody id="corpus-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="records" aria-labelledby="records-title">
+      <div class="wrap">
+        <h2 id="records-title">运行记录</h2>
+        <div class="records-grid">
+          <div class="record-card">
+            <span class="record-value" id="record-db-queries">—</span>
+            <span class="record-label">数据库查询</span>
+          </div>
+          <div class="record-card">
+            <span class="record-value" id="record-evidence-packs">—</span>
+            <span class="record-label">证据包</span>
+          </div>
+          <div class="record-card">
+            <span class="record-value" id="record-qoder-sessions">—</span>
+            <span class="record-label">Qoder 会话</span>
+          </div>
+        </div>
+        <p class="records-note">以上计数来自本地 Python 核心一次真实运行的 <code>records/</code> 目录。</p>
+
+        <aside class="memory-card" aria-labelledby="memory-title">
+          <h3 id="memory-title">研究记忆</h3>
+          <p class="memory-question" id="memory-question">—</p>
+          <div class="memory-grid">
+            <div class="memory-group">
+              <h4>已确认</h4>
+              <ul id="memory-confirmed"></ul>
+            </div>
+            <div class="memory-group">
+              <h4>已排除</h4>
+              <ul id="memory-excluded"></ul>
+            </div>
+            <div class="memory-group">
+              <h4>阅读记录</h4>
+              <ul id="memory-reading"></ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="start" aria-labelledby="start-title">
+      <div class="wrap">
+        <h2 id="start-title">快速开始</h2>
+        <div class="code-card">
+          <button class="copy-btn" id="copy-btn" type="button" aria-label="复制快速开始命令">复制</button>
+          <pre><code id="quickstart-code">python -m paperlens ingest --refresh
+python -m paperlens ask "HNSW 的 ef 参数如何影响召回率？"
+python -m paperlens status
+python -m paperlens export-site</code></pre>
+          <p class="visually-hidden" id="copy-status" role="status"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="boundaries" aria-labelledby="boundaries-title">
+      <div class="wrap">
+        <h2 id="boundaries-title">技术边界</h2>
+        <ul class="limits-list">
+          <li>
+            <span class="limit-index" aria-hidden="true">01</span>
+            <p>演示语料是作者整理的中文摘要，并非论文原文。</p>
+          </li>
+          <li>
+            <span class="limit-index" aria-hidden="true">02</span>
+            <p>向量是 384 维确定性哈希，不是语义模型，因此检索显式放宽了准入阈值。</p>
+          </li>
+          <li>
+            <span class="limit-index" aria-hidden="true">03</span>
+            <p>站点数据由本地 Python 核心离线预计算，站点本身不运行 seekdb。</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p>PaperLens · seekdb + PowerContext · 数据更新时间 <time id="generated-at">—</time></p>
+    </div>
+  </footer>
+</body>
+</html>

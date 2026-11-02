@@ -1,0 +1,210 @@
+{
+  "question": "HNSW 的 ef 参数如何影响召回率和查询延迟？应该先调 ef 还是先调 M？",
+  "generated_at": "2026-11-02T16:27:54Z",
+  "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd",
+  "manifest": {
+    "version": 1,
+    "corpus_fingerprint": "a9faaae978047c853c8047f6b8f8d6845ad26a5a6f3b6ebce8ba8e329ea47f49",
+    "chunks": 54
+  },
+  "plan": {
+    "terms": [
+      "HNSW",
+      "召回率",
+      "延迟"
+    ],
+    "expansions": [
+      "图索引",
+      "graph index",
+      "graph-based index",
+      "recall",
+      "时延",
+      "latency"
+    ],
+    "variants": [
+      "HNSW 的 ef 参数如何影响召回率和查询延迟？应该先调 ef 还是先调 M？",
+      "HNSW 的 ef 参数如何影响召回率和查询延迟？应该先调 ef 还是先调 M？ 图索引 graph index graph-based index recall 时延 latency",
+      "HNSW 的 ef 参数如何影响recall和查询latency？应该先调 ef 还是先调 M？"
+    ]
+  },
+  "hits": [
+    {
+      "rank": 1,
+      "paper": {
+        "id": "hnsw-2018",
+        "title": "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs",
+        "authors": "Malkov, Yashunin",
+        "year": 2018,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "方法与设计",
+      "chunk_id": "0080d2b76fd6",
+      "score": 0.95,
+      "rrf": 0.04918032786885246,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "HNSW",
+        "召回率",
+        "延迟"
+      ],
+      "snippet": "M 决定图的质量与内存占用，ef 决定召回率与延迟的权衡",
+      "evidence": [
+        "M 决定图的质量与内存占用，ef 决定召回率与延迟的权衡"
+      ]
+    },
+    {
+      "rank": 2,
+      "paper": {
+        "id": "hnsw-2018",
+        "title": "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs",
+        "authors": "Malkov, Yashunin",
+        "year": 2018,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "关键实验与结论",
+      "chunk_id": "f876b669d575",
+      "score": 0.9329,
+      "rrf": 0.04788306451612903,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "HNSW",
+        "召回率",
+        "延迟"
+      ],
+      "snippet": "因此工程上常把 ef 设为返回条数 k 的数倍，在召回率与延迟之间折中",
+      "evidence": [
+        "因此工程上常把 ef 设为返回条数 k 的数倍，在召回率与延迟之间折中",
+        "在相同召回率下，HNSW 的查询速度优于对比方法，且在高召回区间（90% 以上）优势更明显",
+        "实验还表明 ef 是运行时唯一需要调节的参数：增大 ef 会单调提升召回率，同时近似线性地增加距离计算次数"
+      ]
+    },
+    {
+      "rank": 3,
+      "paper": {
+        "id": "faiss-2024",
+        "title": "The Faiss Library",
+        "authors": "Douze, Guzhva, Deng, Johnson, Szilvasy, Mazare, Lomeli, Hosseini, Jegou",
+        "year": 2024,
+        "venue": "arXiv preprint"
+      },
+      "section": "关键实验与结论",
+      "chunk_id": "b6df4ab2c22b",
+      "score": 0.8689,
+      "rrf": 0.04304284037558686,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "HNSW",
+        "召回率",
+        "延迟"
+      ],
+      "snippet": "内存受限时，IVF-PQ 通过调节桶数与探测数在召回率与延迟之间折中",
+      "evidence": [
+        "内存受限时，IVF-PQ 通过调节桶数与探测数在召回率与延迟之间折中",
+        "内存充足且要求高召回时，HNSW 或扁平索引加量化重排更合适",
+        "召回率定义也需要明确：是 recall@k（返回结果中包含真实近邻的比例），还是 1-recall@k（每次查询至少命中一个真实近邻），两者差异很大，报告时必须说明"
+      ]
+    },
+    {
+      "rank": 4,
+      "paper": {
+        "id": "faiss-gpu-2019",
+        "title": "Billion-scale Similarity Search with GPUs",
+        "authors": "Johnson, Douze, Jegou",
+        "year": 2019,
+        "venue": "IEEE BigComp"
+      },
+      "section": "关键实验与结论",
+      "chunk_id": "24e02d4f7136",
+      "score": 0.8101,
+      "rrf": 0.04616113053613054,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "召回率",
+        "延迟"
+      ],
+      "snippet": "论文强调，索引参数（桶数量、PQ 子空间数、每桶探测数）对召回率与延迟的影响远大于硬件代际差异，调参比换卡更划算",
+      "evidence": [
+        "论文强调，索引参数（桶数量、PQ 子空间数、每桶探测数）对召回率与延迟的影响远大于硬件代际差异，调参比换卡更划算"
+      ]
+    },
+    {
+      "rank": 5,
+      "paper": {
+        "id": "pq-2011",
+        "title": "Product Quantization for Nearest Neighbor Search",
+        "authors": "Jegou, Douze, Schmid",
+        "year": 2011,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "对实践的启示",
+      "chunk_id": "10cc7050f077",
+      "score": 0.8008,
+      "rrf": 0.0454615036704589,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "召回率",
+        "延迟"
+      ],
+      "snippet": "如果查询延迟要求很高而内存相对宽裕，可以把 PQ 只用于导航，保留全精度向量做精排，这正是后续磁盘索引方案的基本结构",
+      "evidence": [
+        "如果查询延迟要求很高而内存相对宽裕，可以把 PQ 只用于导航，保留全精度向量做精排，这正是后续磁盘索引方案的基本结构"
+      ]
+    }
+  ],
+  "coverage": {
+    "terms_total": 3,
+    "terms_covered": 3,
+    "terms_missing": [],
+    "ratio": 1.0,
+    "papers_hit": [
+      "hnsw-2018",
+      "faiss-2024",
+      "faiss-gpu-2019",
+      "pq-2011"
+    ],
+    "papers_total": 8
+  },
+  "gaps": {
+    "uncovered_papers": [
+      "diskann-2019",
+      "ivf-adc-2006",
+      "mrl-2022",
+      "scann-2020"
+    ],
+    "missing_terms": [],
+    "note": "4 篇论文未被命中，建议补充检索或调整问题表述。"
+  },
+  "memory": {
+    "question": "内存受限条件下如何构建十亿级向量检索系统",
+    "confirmed": [
+      "PQ 把向量压到 m 字节，适合作为内存中的导航层"
+    ],
+    "excluded": [
+      {
+        "text": "暂不考虑依赖 GPU 的方案",
+        "paper": null
+      }
+    ],
+    "excluded_papers": [],
+    "reading": {
+      "hnsw-2018": "read",
+      "pq-2011": "read",
+      "diskann-2019": "skim"
+    }
+  }
+}

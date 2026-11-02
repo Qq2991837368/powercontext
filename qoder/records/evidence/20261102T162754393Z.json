@@ -1,0 +1,239 @@
+{
+  "question": "十亿级向量检索如何在单机上做到低延迟？DiskANN 和 GPU 方案各自依赖什么条件？",
+  "generated_at": "2026-11-02T16:27:54Z",
+  "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd",
+  "manifest": {
+    "version": 1,
+    "corpus_fingerprint": "a9faaae978047c853c8047f6b8f8d6845ad26a5a6f3b6ebce8ba8e329ea47f49",
+    "chunks": 54
+  },
+  "plan": {
+    "terms": [
+      "十亿级",
+      "延迟",
+      "disk",
+      "diskann",
+      "gpu"
+    ],
+    "expansions": [
+      "billion-scale",
+      "billion scale",
+      "billion",
+      "时延",
+      "latency",
+      "磁盘",
+      "SSD",
+      "solid-state drive"
+    ],
+    "variants": [
+      "十亿级向量检索如何在单机上做到低延迟？DiskANN 和 GPU 方案各自依赖什么条件？",
+      "十亿级向量检索如何在单机上做到低延迟？DiskANN 和 GPU 方案各自依赖什么条件？ billion-scale billion scale billion 时延 latency 磁盘 SSD solid-state drive",
+      "billion-scale向量检索如何在单机上做到低latency？DiskANN 和 GPU 方案各自依赖什么条件？"
+    ]
+  },
+  "hits": [
+    {
+      "rank": 1,
+      "paper": {
+        "id": "diskann-2019",
+        "title": "DiskANN: Fast Accurate Billion-point Nearest Neighbor Search on a Single Node",
+        "authors": "Subramanya, Devvrit, Simhadri, Krishnaswamy, Kadekodi",
+        "year": 2019,
+        "venue": "NeurIPS"
+      },
+      "section": "关键实验与结论",
+      "chunk_id": "2b7e8835da0e",
+      "score": 0.8666,
+      "rrf": 0.04715356328259554,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "十亿级",
+        "延迟",
+        "disk",
+        "diskann"
+      ],
+      "snippet": "实验还对比了纯内存 HNSW 与纯磁盘 IVF：在同等召回率下，DiskANN 的延迟更低或内存占用更小",
+      "evidence": [
+        "实验还对比了纯内存 HNSW 与纯磁盘 IVF：在同等召回率下，DiskANN 的延迟更低或内存占用更小",
+        "论文报告在十亿级数据集上，单节点（约 64 GB 内存 + NVMe SSD）可以达到 5 毫秒以内、95% 以上 recall@1 的表现，且索引构建规模可扩展到十亿点"
+      ]
+    },
+    {
+      "rank": 2,
+      "paper": {
+        "id": "diskann-2019",
+        "title": "DiskANN: Fast Accurate Billion-point Nearest Neighbor Search on a Single Node",
+        "authors": "Subramanya, Devvrit, Simhadri, Krishnaswamy, Kadekodi",
+        "year": 2019,
+        "venue": "NeurIPS"
+      },
+      "section": "局限与适用边界",
+      "chunk_id": "1fe5188e6c1b",
+      "score": 0.8029,
+      "rrf": 0.046875,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "延迟",
+        "disk",
+        "diskann"
+      ],
+      "snippet": "DiskANN 强依赖 SSD 随机读性能",
+      "evidence": [
+        "DiskANN 强依赖 SSD 随机读性能"
+      ]
+    },
+    {
+      "rank": 3,
+      "paper": {
+        "id": "faiss-gpu-2019",
+        "title": "Billion-scale Similarity Search with GPUs",
+        "authors": "Johnson, Douze, Jegou",
+        "year": 2019,
+        "venue": "IEEE BigComp"
+      },
+      "section": "研究问题",
+      "chunk_id": "17290d6e6e3f",
+      "score": 0.77,
+      "rrf": 0.048915917503966164,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "十亿级",
+        "gpu"
+      ],
+      "snippet": "论文要解决的问题是：如何把倒排索引（inverted file, IVF）与乘积量化（PQ）的完整流水线搬到 GPU 上，使得十亿级向量的索引构建与查询都能在单机多卡上完成，并给出可复现的性能数据",
+      "evidence": [
+        "论文要解决的问题是：如何把倒排索引（inverted file, IVF）与乘积量化（PQ）的完整流水线搬到 GPU 上，使得十亿级向量的索引构建与查询都能在单机多卡上完成，并给出可复现的性能数据",
+        "当向量库达到十亿级，单机 CPU 的算力与内存带宽都会成为瓶颈",
+        "GPU 拥有数千个计算核心和更高的显存带宽，适合做大规模矩阵乘法与距离计算，但显存容量有限，且索引构建（尤其是 k-means 聚类）本身开销巨大"
+      ]
+    },
+    {
+      "rank": 4,
+      "paper": {
+        "id": "hnsw-2018",
+        "title": "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs",
+        "authors": "Malkov, Yashunin",
+        "year": 2018,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "对实践的启示",
+      "chunk_id": "b864a7c8e00c",
+      "score": 0.6888,
+      "rrf": 0.042802163511545664,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "十亿级",
+        "延迟"
+      ],
+      "snippet": "选型时先确定召回率目标，再反推 ef，而不是先固定延迟",
+      "evidence": [
+        "选型时先确定召回率目标，再反推 ef，而不是先固定延迟",
+        "若内存受限或需要十亿级规模，应考虑量化索引或磁盘索引，并把 HNSW 作为内存层的候选方案之一"
+      ]
+    },
+    {
+      "rank": 5,
+      "paper": {
+        "id": "faiss-gpu-2019",
+        "title": "Billion-scale Similarity Search with GPUs",
+        "authors": "Johnson, Douze, Jegou",
+        "year": 2019,
+        "venue": "IEEE BigComp"
+      },
+      "section": "局限与适用边界",
+      "chunk_id": "713196a6e88d",
+      "score": 0.6652,
+      "rrf": 0.045547159015581276,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "gpu"
+      ],
+      "snippet": "对于预算有限或无法使用 GPU 的环境，CPU 索引仍是主流",
+      "evidence": [
+        "对于预算有限或无法使用 GPU 的环境，CPU 索引仍是主流",
+        "GPU 版本的构建流程对内存带宽敏感，索引构建阶段需要频繁在主机与设备之间传输数据，实际耗时往往由 PCIe 带宽决定"
+      ]
+    },
+    {
+      "rank": 6,
+      "paper": {
+        "id": "pq-2011",
+        "title": "Product Quantization for Nearest Neighbor Search",
+        "authors": "Jegou, Douze, Schmid",
+        "year": 2011,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "对实践的启示",
+      "chunk_id": "10cc7050f077",
+      "score": 0.6492,
+      "rrf": 0.04433713784021071,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "延迟"
+      ],
+      "snippet": "如果查询延迟要求很高而内存相对宽裕，可以把 PQ 只用于导航，保留全精度向量做精排，这正是后续磁盘索引方案的基本结构",
+      "evidence": [
+        "如果查询延迟要求很高而内存相对宽裕，可以把 PQ 只用于导航，保留全精度向量做精排，这正是后续磁盘索引方案的基本结构"
+      ]
+    }
+  ],
+  "coverage": {
+    "terms_total": 5,
+    "terms_covered": 5,
+    "terms_missing": [],
+    "ratio": 1.0,
+    "papers_hit": [
+      "diskann-2019",
+      "faiss-gpu-2019",
+      "hnsw-2018",
+      "pq-2011"
+    ],
+    "papers_total": 8
+  },
+  "gaps": {
+    "uncovered_papers": [
+      "faiss-2024",
+      "ivf-adc-2006",
+      "mrl-2022",
+      "scann-2020"
+    ],
+    "missing_terms": [],
+    "note": "4 篇论文未被命中，建议补充检索或调整问题表述。"
+  },
+  "memory": {
+    "question": "内存受限条件下如何构建十亿级向量检索系统",
+    "confirmed": [
+      "PQ 把向量压到 m 字节，适合作为内存中的导航层"
+    ],
+    "excluded": [
+      {
+        "text": "暂不考虑依赖 GPU 的方案",
+        "paper": null
+      }
+    ],
+    "excluded_papers": [],
+    "reading": {
+      "hnsw-2018": "read",
+      "pq-2011": "read",
+      "diskann-2019": "skim"
+    }
+  }
+}

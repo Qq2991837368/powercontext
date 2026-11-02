@@ -1,0 +1,53 @@
+{"at": "2026-11-02T16:19:58.078471+00:00", "kind": "corpus-manifest", "operation": "import_corpus", "scope_id": "scp_4x8jbck39nh6w4r24k5n72zk5w"}
+{"at": "2026-11-02T16:19:58.094647+00:00", "kind": "corpus-manifest", "operation": "current_manifest", "scope_id": "scp_4x8jbck39nh6w4r24k5n72zk5w"}
+{"at": "2026-11-02T16:19:58.168290+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "HNSW 的 ef 参数如何影响召回率和查询延迟？应该先调 ef 还是先调 M？", "returned": 40, "scope_id": "scp_4x8jbck39nh6w4r24k5n72zk5w"}
+{"at": "2026-11-02T16:19:58.219971+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "HNSW 的 ef 参数如何影响召回率和查询延迟？应该先调 ef 还是先调 M？ 图索引 graph index graph-based index recall 时延 latency", "returned": 40, "scope_id": "scp_4x8jbck39nh6w4r24k5n72zk5w"}
+{"at": "2026-11-02T16:19:58.268349+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "HNSW 的 ef 参数如何影响recall和查询latency？应该先调 ef 还是先调 M？", "returned": 40, "scope_id": "scp_4x8jbck39nh6w4r24k5n72zk5w"}
+{"at": "2026-11-02T16:19:58.308041+00:00", "kind": "research-note", "operation": "create_note", "scope_id": "scp_4x8jbck39nh6w4r24k5n72zk5w"}
+{"at": "2026-11-02T16:19:58.349528+00:00", "kind": "research-note", "operation": "create_note", "scope_id": "scp_4x8jbck39nh6w4r24k5n72zk5w"}
+{"at": "2026-11-02T16:19:58.368504+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_4x8jbck39nh6w4r24k5n72zk5w"}
+{"at": "2026-11-02T16:26:03.781680+00:00", "kind": "corpus-manifest", "operation": "import_corpus", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:26:15.126469+00:00", "kind": "corpus-manifest", "operation": "current_manifest", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:26:15.139992+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:26:15.775938+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "乘积量化 PQ 怎样在有限内存下压缩向量？精度损失来自哪里，ADC 为什么仍然可用？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:26:15.842032+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "乘积量化 PQ 怎样在有限内存下压缩向量？精度损失来自哪里，ADC 为什么仍然可用？ product quantization 压缩率 compression compression ratio memory quantization quantize quantized quantizer", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:26:15.899150+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "PQ PQ 怎样在有限memory下compression向量？精度损失来自哪里，ADC 为什么仍然可用？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:26:16.016065+00:00", "kind": "query-log", "operation": "log_query", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:26:54.711575+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:26:55.401618+00:00", "kind": "research-note", "operation": "create_note", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:02.186707+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:02.869441+00:00", "kind": "research-note", "operation": "create_note", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:09.599707+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:10.300127+00:00", "kind": "research-note", "operation": "create_note", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:18.011624+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:18.114566+00:00", "kind": "research-note", "operation": "create_note", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:24.729999+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:24.828824+00:00", "kind": "research-note", "operation": "create_note", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:31.689355+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:31.790948+00:00", "kind": "research-note", "operation": "create_note", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:38.621682+00:00", "kind": "corpus-manifest", "operation": "current_manifest", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:38.644810+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:38.663282+00:00", "kind": "query-log", "operation": "list_query_logs", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:53.249306+00:00", "kind": "corpus-manifest", "operation": "current_manifest", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:53.271457+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:53.926755+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "HNSW 的 ef 参数如何影响召回率和查询延迟？应该先调 ef 还是先调 M？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:53.984444+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "HNSW 的 ef 参数如何影响召回率和查询延迟？应该先调 ef 还是先调 M？ 图索引 graph index graph-based index recall 时延 latency", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.037528+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "HNSW 的 ef 参数如何影响recall和查询latency？应该先调 ef 还是先调 M？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.095725+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "乘积量化 PQ 怎样在有限内存下压缩向量？精度损失来自哪里，ADC 为什么仍然可用？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.155953+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "乘积量化 PQ 怎样在有限内存下压缩向量？精度损失来自哪里，ADC 为什么仍然可用？ product quantization 压缩率 compression compression ratio memory quantization quantize quantized quantizer", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.210977+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "PQ PQ 怎样在有限memory下compression向量？精度损失来自哪里，ADC 为什么仍然可用？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.278561+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "十亿级向量检索如何在单机上做到低延迟？DiskANN 和 GPU 方案各自依赖什么条件？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.335469+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "十亿级向量检索如何在单机上做到低延迟？DiskANN 和 GPU 方案各自依赖什么条件？ billion-scale billion scale billion 时延 latency 磁盘 SSD solid-state drive", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.387078+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "billion-scale向量检索如何在单机上做到低latency？DiskANN 和 GPU 方案各自依赖什么条件？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.447129+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "ScaNN 的各向异性量化为什么只优化查询方向上的误差？这对内积检索意味着什么？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.499690+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "ScaNN 的各向异性量化为什么只优化查询方向上的误差？这对内积检索意味着什么？ anisotropic anisotropy inner product MIPS maximum inner product search quantization quantize quantized quantizer", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.547948+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "ScaNN 的anisotropicquantization为什么只优化查询方向上的误差？这对inner product检索意味着什么？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.613334+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "如果内存预算有限、但要求 95% 以上召回率并支撑十亿级向量，应该怎样在 IVF、PQ、图索引与磁盘索引之间取舍？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.679712+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "如果内存预算有限、但要求 95% 以上召回率并支撑十亿级向量，应该怎样在 IVF、PQ、图索引与磁盘索引之间取舍？ 乘积量化 product quantization 倒排 倒排索引 倒排表 inverted file inverted index inverted list graph index graph-based index HNSW NSW billion-scale billion scale billion recall memory SSD disk solid-state drive", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.731806+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "如果memory预算有限、但要求 95% 以上recall并支撑billion-scale向量，应该怎样在 IVF、PQ、graph index与SSD索引之间取舍？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.792669+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "Matryoshka 表示学习如何支持可变维度检索？如果不能重训模型，还有什么替代做法？", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.842838+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "Matryoshka 表示学习如何支持可变维度检索？如果不能重训模型，还有什么替代做法？ dimension dimensionality 自适应 adaptive 嵌套 Matryoshka representation learning MRL", "returned": 40, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T16:27:54.905813+00:00", "kind": "paper-chunk", "limit": 40, "operation": "search", "query": "Matryoshka 表示学习如何支持可变dimension检索？如果不能重训模型，还有什么替代做法？", "returned": 37, "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T17:13:04.275487+00:00", "kind": "corpus-manifest", "operation": "current_manifest", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T17:13:04.306973+00:00", "kind": "research-note", "operation": "list_notes", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}
+{"at": "2026-11-02T17:13:04.323469+00:00", "kind": "query-log", "operation": "list_query_logs", "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd"}

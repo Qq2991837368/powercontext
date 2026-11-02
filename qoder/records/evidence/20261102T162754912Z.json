@@ -1,0 +1,195 @@
+{
+  "question": "Matryoshka 表示学习如何支持可变维度检索？如果不能重训模型，还有什么替代做法？",
+  "generated_at": "2026-11-02T16:27:54Z",
+  "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd",
+  "manifest": {
+    "version": 1,
+    "corpus_fingerprint": "a9faaae978047c853c8047f6b8f8d6845ad26a5a6f3b6ebce8ba8e329ea47f49",
+    "chunks": 54
+  },
+  "plan": {
+    "terms": [
+      "维度",
+      "Matryoshka"
+    ],
+    "expansions": [
+      "dimension",
+      "dimensionality",
+      "自适应",
+      "adaptive",
+      "嵌套",
+      "Matryoshka representation learning",
+      "MRL"
+    ],
+    "variants": [
+      "Matryoshka 表示学习如何支持可变维度检索？如果不能重训模型，还有什么替代做法？",
+      "Matryoshka 表示学习如何支持可变维度检索？如果不能重训模型，还有什么替代做法？ dimension dimensionality 自适应 adaptive 嵌套 Matryoshka representation learning MRL",
+      "Matryoshka 表示学习如何支持可变dimension检索？如果不能重训模型，还有什么替代做法？"
+    ]
+  },
+  "hits": [
+    {
+      "rank": 1,
+      "paper": {
+        "id": "mrl-2022",
+        "title": "Matryoshka Representation Learning",
+        "authors": "Kusupati, Hatamizadeh, Rege, Kasa, Vedantam, Farhadi",
+        "year": 2022,
+        "venue": "NeurIPS"
+      },
+      "section": "关键实验与结论",
+      "chunk_id": "dada95d3738c",
+      "score": 0.7763,
+      "rrf": 0.04738666351569577,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "维度"
+      ],
+      "snippet": "论文报告在相同精度下，MRL 可以用更小的维度达到接近全维度的效果，并给出数十倍的存储与计算节省量级",
+      "evidence": [
+        "论文报告在相同精度下，MRL 可以用更小的维度达到接近全维度的效果，并给出数十倍的存储与计算节省量级",
+        "论文在 ImageNet 分类与检索任务上验证了嵌套性质：同一模型的 8 维、16 维、…、2048 维前缀都能得到合理的精度，且随维度增加单调上升"
+      ]
+    },
+    {
+      "rank": 2,
+      "paper": {
+        "id": "pq-2011",
+        "title": "Product Quantization for Nearest Neighbor Search",
+        "authors": "Jegou, Douze, Schmid",
+        "year": 2011,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "方法与设计",
+      "chunk_id": "0b81d1b5c7c4",
+      "score": 0.754,
+      "rrf": 0.04570188828584351,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "维度"
+      ],
+      "snippet": "乘积量化（product quantization, PQ）把 D 维向量切分成 m 段子向量，每段维度为 D/m",
+      "evidence": [
+        "乘积量化（product quantization, PQ）把 D 维向量切分成 m 段子向量，每段维度为 D/m"
+      ]
+    },
+    {
+      "rank": 3,
+      "paper": {
+        "id": "hnsw-2018",
+        "title": "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs",
+        "authors": "Malkov, Yashunin",
+        "year": 2018,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "局限与适用边界",
+      "chunk_id": "6aa32a3cf902",
+      "score": 0.736,
+      "rrf": 0.044337137840210705,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "维度"
+      ],
+      "snippet": "在维度很高且距离集中（维度灾难）的原始特征上，邻域区分度下降，图的质量随之下降",
+      "evidence": [
+        "在维度很高且距离集中（维度灾难）的原始特征上，邻域区分度下降，图的质量随之下降"
+      ]
+    },
+    {
+      "rank": 4,
+      "paper": {
+        "id": "mrl-2022",
+        "title": "Matryoshka Representation Learning",
+        "authors": "Kusupati, Hatamizadeh, Rege, Kasa, Vedantam, Farhadi",
+        "year": 2022,
+        "venue": "NeurIPS"
+      },
+      "section": "对实践的启示",
+      "chunk_id": "731e9d9b2ae4",
+      "score": 0.65,
+      "rrf": 0.04918032786885246,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [],
+      "snippet": "如果团队控制 embedding 模型，MRL 是一种“一次训练、多档使用”的方案，特别适合需要同时支持低延迟粗筛与高精度精排的系统。\n\n如果无法重训模型，可以把“粗到细”的思想用在索引层：用量化码做粗筛，用全精度向量做精排，效果与 MRL 的两阶段流程类似，只是粗筛精度略低。",
+      "evidence": []
+    },
+    {
+      "rank": 5,
+      "paper": {
+        "id": "diskann-2019",
+        "title": "DiskANN: Fast Accurate Billion-point Nearest Neighbor Search on a Single Node",
+        "authors": "Subramanya, Devvrit, Simhadri, Krishnaswamy, Kadekodi",
+        "year": 2019,
+        "venue": "NeurIPS"
+      },
+      "section": "局限与适用边界",
+      "chunk_id": "1fe5188e6c1b",
+      "score": 0.623,
+      "rrf": 0.0471386476426799,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [],
+      "snippet": "DiskANN 强依赖 SSD 随机读性能。机械硬盘或网络存储会让延迟不可接受。SSD 的寿命与写入放大也需要考虑，索引重建会带来大量写入。\n\n构建阶段需要较大的内存缓冲，且建图时间较长；更新方面，早期版本对增量插入的支持有限，常见做法是合并增量索引或周期性重建。\n\nPQ 压缩向量用于导航，量化误差会影响候选集质量。对",
+      "evidence": []
+    }
+  ],
+  "coverage": {
+    "terms_total": 2,
+    "terms_covered": 1,
+    "terms_missing": [
+      "Matryoshka"
+    ],
+    "ratio": 0.5,
+    "papers_hit": [
+      "mrl-2022",
+      "pq-2011",
+      "hnsw-2018",
+      "diskann-2019"
+    ],
+    "papers_total": 8
+  },
+  "gaps": {
+    "uncovered_papers": [
+      "faiss-2024",
+      "faiss-gpu-2019",
+      "ivf-adc-2006",
+      "scann-2020"
+    ],
+    "missing_terms": [
+      "Matryoshka"
+    ],
+    "note": "1 个术语未被任何证据覆盖，4 篇论文未被命中，建议补充检索或调整问题表述。"
+  },
+  "memory": {
+    "question": "内存受限条件下如何构建十亿级向量检索系统",
+    "confirmed": [
+      "PQ 把向量压到 m 字节，适合作为内存中的导航层"
+    ],
+    "excluded": [
+      {
+        "text": "暂不考虑依赖 GPU 的方案",
+        "paper": null
+      }
+    ],
+    "excluded_papers": [],
+    "reading": {
+      "hnsw-2018": "read",
+      "pq-2011": "read",
+      "diskann-2019": "skim"
+    }
+  }
+}

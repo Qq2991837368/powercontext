@@ -1,0 +1,2 @@
+powercontext[seekdb]==1.4.1
+pytest>=8,<9

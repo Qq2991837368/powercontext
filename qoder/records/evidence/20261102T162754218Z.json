@@ -1,0 +1,220 @@
+{
+  "question": "乘积量化 PQ 怎样在有限内存下压缩向量？精度损失来自哪里，ADC 为什么仍然可用？",
+  "generated_at": "2026-11-02T16:27:54Z",
+  "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd",
+  "manifest": {
+    "version": 1,
+    "corpus_fingerprint": "a9faaae978047c853c8047f6b8f8d6845ad26a5a6f3b6ebce8ba8e329ea47f49",
+    "chunks": 54
+  },
+  "plan": {
+    "terms": [
+      "乘积量化",
+      "压缩",
+      "内存",
+      "量化",
+      "adc"
+    ],
+    "expansions": [
+      "product quantization",
+      "压缩率",
+      "compression",
+      "compression ratio",
+      "memory",
+      "quantization",
+      "quantize",
+      "quantized",
+      "quantizer"
+    ],
+    "variants": [
+      "乘积量化 PQ 怎样在有限内存下压缩向量？精度损失来自哪里，ADC 为什么仍然可用？",
+      "乘积量化 PQ 怎样在有限内存下压缩向量？精度损失来自哪里，ADC 为什么仍然可用？ product quantization 压缩率 compression compression ratio memory quantization quantize quantized quantizer",
+      "PQ PQ 怎样在有限memory下compression向量？精度损失来自哪里，ADC 为什么仍然可用？"
+    ]
+  },
+  "hits": [
+    {
+      "rank": 1,
+      "paper": {
+        "id": "ivf-adc-2006",
+        "title": "Approximate Nearest Neighbor Search with Inverted File and Residual Encoding",
+        "authors": "Jegou, Harada, Schmid",
+        "year": 2006,
+        "venue": "CVPR Workshop"
+      },
+      "section": "方法与设计",
+      "chunk_id": "27a81a78b9da",
+      "score": 0.8545,
+      "rrf": 0.04599076949620428,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "乘积量化",
+        "压缩",
+        "量化",
+        "adc"
+      ],
+      "snippet": "为了进一步压缩，簇内向量不存原始坐标，而存相对于所属中心的残差，再对残差做乘积量化",
+      "evidence": [
+        "为了进一步压缩，簇内向量不存原始坐标，而存相对于所属中心的残差，再对残差做乘积量化",
+        "这被称为残差编码：残差的分布更集中，量化误差更小，因此同样码长下精度更高",
+        "查询时，对每个被扫描的簇，用“查询减中心”的残差与码本做 ADC 距离计算，得到近似距离后归并"
+      ]
+    },
+    {
+      "rank": 2,
+      "paper": {
+        "id": "pq-2011",
+        "title": "Product Quantization for Nearest Neighbor Search",
+        "authors": "Jegou, Douze, Schmid",
+        "year": 2011,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "局限与适用边界",
+      "chunk_id": "9d449b8cea1e",
+      "score": 0.83,
+      "rrf": 0.048651507139079855,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "压缩",
+        "量化",
+        "adc"
+      ],
+      "snippet": "PQ 是纯量化方法，查询时仍需遍历全部向量（穷举 ADC）",
+      "evidence": [
+        "PQ 是纯量化方法，查询时仍需遍历全部向量（穷举 ADC）",
+        "当库规模达到十亿级时，即使每次距离计算很便宜，总计算量仍然过大，因此实际系统通常把 PQ 与倒排索引结合，形成 IVFPQ：先用粗聚类定位若干桶，再在桶内做 ADC"
+      ]
+    },
+    {
+      "rank": 3,
+      "paper": {
+        "id": "pq-2011",
+        "title": "Product Quantization for Nearest Neighbor Search",
+        "authors": "Jegou, Douze, Schmid",
+        "year": 2011,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "研究问题",
+      "chunk_id": "2ffaea1cfa87",
+      "score": 0.8163,
+      "rrf": 0.04762704813108039,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "压缩",
+        "内存",
+        "量化"
+      ],
+      "snippet": "论文要回答的问题是：能否设计一种量化方式，把向量压缩到几十字节量级，同时让查询时的距离计算足够快，并且精度损失可控",
+      "evidence": [
+        "论文要回答的问题是：能否设计一种量化方式，把向量压缩到几十字节量级，同时让查询时的距离计算足够快，并且精度损失可控",
+        "传统的哈希方法把向量映射到二值码，压缩率高但召回率损失大",
+        "一个 128 维的单精度向量占 512 字节，十亿条就是 512 GB，无法常驻内存"
+      ]
+    },
+    {
+      "rank": 4,
+      "paper": {
+        "id": "faiss-gpu-2019",
+        "title": "Billion-scale Similarity Search with GPUs",
+        "authors": "Johnson, Douze, Jegou",
+        "year": 2019,
+        "venue": "IEEE BigComp"
+      },
+      "section": "研究问题",
+      "chunk_id": "17290d6e6e3f",
+      "score": 0.7561,
+      "rrf": 0.04311675689450306,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "乘积量化",
+        "内存",
+        "量化"
+      ],
+      "snippet": "论文要解决的问题是：如何把倒排索引（inverted file, IVF）与乘积量化（PQ）的完整流水线搬到 GPU 上，使得十亿级向量的索引构建与查询都能在单机多卡上完成，并给出可复现的性能数据",
+      "evidence": [
+        "论文要解决的问题是：如何把倒排索引（inverted file, IVF）与乘积量化（PQ）的完整流水线搬到 GPU 上，使得十亿级向量的索引构建与查询都能在单机多卡上完成，并给出可复现的性能数据",
+        "当向量库达到十亿级，单机 CPU 的算力与内存带宽都会成为瓶颈"
+      ]
+    },
+    {
+      "rank": 5,
+      "paper": {
+        "id": "diskann-2019",
+        "title": "DiskANN: Fast Accurate Billion-point Nearest Neighbor Search on a Single Node",
+        "authors": "Subramanya, Devvrit, Simhadri, Krishnaswamy, Kadekodi",
+        "year": 2019,
+        "venue": "NeurIPS"
+      },
+      "section": "对实践的启示",
+      "chunk_id": "08d40b401687",
+      "score": 0.7031,
+      "rrf": 0.04364332185227708,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "压缩",
+        "内存"
+      ],
+      "snippet": "选型时先算两个数：全精度向量总量与 PQ 压缩后总量，再看后者能否装进内存",
+      "evidence": [
+        "选型时先算两个数：全精度向量总量与 PQ 压缩后总量，再看后者能否装进内存",
+        "当内存预算无法覆盖全量向量，但可以覆盖“压缩后的导航数据”时，DiskANN 类方案是最优解之一"
+      ]
+    }
+  ],
+  "coverage": {
+    "terms_total": 5,
+    "terms_covered": 5,
+    "terms_missing": [],
+    "ratio": 1.0,
+    "papers_hit": [
+      "ivf-adc-2006",
+      "pq-2011",
+      "faiss-gpu-2019",
+      "diskann-2019"
+    ],
+    "papers_total": 8
+  },
+  "gaps": {
+    "uncovered_papers": [
+      "faiss-2024",
+      "hnsw-2018",
+      "mrl-2022",
+      "scann-2020"
+    ],
+    "missing_terms": [],
+    "note": "4 篇论文未被命中，建议补充检索或调整问题表述。"
+  },
+  "memory": {
+    "question": "内存受限条件下如何构建十亿级向量检索系统",
+    "confirmed": [
+      "PQ 把向量压到 m 字节，适合作为内存中的导航层"
+    ],
+    "excluded": [
+      {
+        "text": "暂不考虑依赖 GPU 的方案",
+        "paper": null
+      }
+    ],
+    "excluded_papers": [],
+    "reading": {
+      "hnsw-2018": "read",
+      "pq-2011": "read",
+      "diskann-2019": "skim"
+    }
+  }
+}

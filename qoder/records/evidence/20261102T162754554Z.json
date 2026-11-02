@@ -1,0 +1,209 @@
+{
+  "question": "ScaNN 的各向异性量化为什么只优化查询方向上的误差？这对内积检索意味着什么？",
+  "generated_at": "2026-11-02T16:27:54Z",
+  "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd",
+  "manifest": {
+    "version": 1,
+    "corpus_fingerprint": "a9faaae978047c853c8047f6b8f8d6845ad26a5a6f3b6ebce8ba8e329ea47f49",
+    "chunks": 54
+  },
+  "plan": {
+    "terms": [
+      "各向异性",
+      "内积",
+      "量化",
+      "scann"
+    ],
+    "expansions": [
+      "anisotropic",
+      "anisotropy",
+      "inner product",
+      "MIPS",
+      "maximum inner product search",
+      "quantization",
+      "quantize",
+      "quantized",
+      "quantizer"
+    ],
+    "variants": [
+      "ScaNN 的各向异性量化为什么只优化查询方向上的误差？这对内积检索意味着什么？",
+      "ScaNN 的各向异性量化为什么只优化查询方向上的误差？这对内积检索意味着什么？ anisotropic anisotropy inner product MIPS maximum inner product search quantization quantize quantized quantizer",
+      "ScaNN 的anisotropicquantization为什么只优化查询方向上的误差？这对inner product检索意味着什么？"
+    ]
+  },
+  "hits": [
+    {
+      "rank": 1,
+      "paper": {
+        "id": "scann-2020",
+        "title": "Accelerating Large-Scale Inference with Anisotropic Vector Quantization",
+        "authors": "Guo, Sun, Shrivastava, Xu, Shen, Kumar, Sun, Wang, Wu",
+        "year": 2020,
+        "venue": "ICML"
+      },
+      "section": "方法与设计",
+      "chunk_id": "d5ff81cc3a33",
+      "score": 0.875,
+      "rrf": 0.048915917503966164,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "各向异性",
+        "量化",
+        "scann"
+      ],
+      "snippet": "论文提出各向异性向量量化（anisotropic vector quantization）：在训练量化器时，把量化误差按方向加权，放大平行于数据主方向的分量，压缩正交方向的分量",
+      "evidence": [
+        "论文提出各向异性向量量化（anisotropic vector quantization）：在训练量化器时，把量化误差按方向加权，放大平行于数据主方向的分量，压缩正交方向的分量"
+      ]
+    },
+    {
+      "rank": 2,
+      "paper": {
+        "id": "scann-2020",
+        "title": "Accelerating Large-Scale Inference with Anisotropic Vector Quantization",
+        "authors": "Guo, Sun, Shrivastava, Xu, Shen, Kumar, Sun, Wang, Wu",
+        "year": 2020,
+        "venue": "ICML"
+      },
+      "section": "研究问题",
+      "chunk_id": "6757f50cba01",
+      "score": 0.8612,
+      "rrf": 0.04787506400409626,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "内积",
+        "量化",
+        "scann"
+      ],
+      "snippet": "为了压缩存储，通常用量化把向量替换为码本中心，但传统量化器最小化的是“原始向量与重建向量”的欧氏距离，这个目标与“内积排序是否正确”并不等价",
+      "evidence": [
+        "为了压缩存储，通常用量化把向量替换为码本中心，但传统量化器最小化的是“原始向量与重建向量”的欧氏距离，这个目标与“内积排序是否正确”并不等价",
+        "如果对所有方向的误差一视同仁地惩罚，就会在无关方向上浪费量化精度",
+        "误差向量在与查询方向平行的分量会直接改变内积，垂直分量对排序影响很小"
+      ]
+    },
+    {
+      "rank": 3,
+      "paper": {
+        "id": "ivf-adc-2006",
+        "title": "Approximate Nearest Neighbor Search with Inverted File and Residual Encoding",
+        "authors": "Jegou, Harada, Schmid",
+        "year": 2006,
+        "venue": "CVPR Workshop"
+      },
+      "section": "方法与设计",
+      "chunk_id": "27a81a78b9da",
+      "score": 0.6642,
+      "rrf": 0.044337137840210705,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "量化"
+      ],
+      "snippet": "这被称为残差编码：残差的分布更集中，量化误差更小，因此同样码长下精度更高",
+      "evidence": [
+        "这被称为残差编码：残差的分布更集中，量化误差更小，因此同样码长下精度更高",
+        "为了进一步压缩，簇内向量不存原始坐标，而存相对于所属中心的残差，再对残差做乘积量化"
+      ]
+    },
+    {
+      "rank": 4,
+      "paper": {
+        "id": "pq-2011",
+        "title": "Product Quantization for Nearest Neighbor Search",
+        "authors": "Jegou, Douze, Schmid",
+        "year": 2011,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "方法与设计",
+      "chunk_id": "0b81d1b5c7c4",
+      "score": 0.649,
+      "rrf": 0.0431943583842318,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "量化"
+      ],
+      "snippet": "乘积量化（product quantization, PQ）把 D 维向量切分成 m 段子向量，每段维度为 D/m",
+      "evidence": [
+        "乘积量化（product quantization, PQ）把 D 维向量切分成 m 段子向量，每段维度为 D/m"
+      ]
+    },
+    {
+      "rank": 5,
+      "paper": {
+        "id": "pq-2011",
+        "title": "Product Quantization for Nearest Neighbor Search",
+        "authors": "Jegou, Douze, Schmid",
+        "year": 2011,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "关键实验与结论",
+      "chunk_id": "473f7bde8393",
+      "score": 0.6314,
+      "rrf": 0.04187323331158947,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "量化"
+      ],
+      "snippet": "ADC 的误差来源有两部分：一是量化误差，向量被替换为码本中心，真实距离与近似距离存在偏差",
+      "evidence": [
+        "ADC 的误差来源有两部分：一是量化误差，向量被替换为码本中心，真实距离与近似距离存在偏差"
+      ]
+    }
+  ],
+  "coverage": {
+    "terms_total": 4,
+    "terms_covered": 4,
+    "terms_missing": [],
+    "ratio": 1.0,
+    "papers_hit": [
+      "scann-2020",
+      "ivf-adc-2006",
+      "pq-2011"
+    ],
+    "papers_total": 8
+  },
+  "gaps": {
+    "uncovered_papers": [
+      "diskann-2019",
+      "faiss-2024",
+      "faiss-gpu-2019",
+      "hnsw-2018",
+      "mrl-2022"
+    ],
+    "missing_terms": [],
+    "note": "5 篇论文未被命中，建议补充检索或调整问题表述。"
+  },
+  "memory": {
+    "question": "内存受限条件下如何构建十亿级向量检索系统",
+    "confirmed": [
+      "PQ 把向量压到 m 字节，适合作为内存中的导航层"
+    ],
+    "excluded": [
+      {
+        "text": "暂不考虑依赖 GPU 的方案",
+        "paper": null
+      }
+    ],
+    "excluded_papers": [],
+    "reading": {
+      "hnsw-2018": "read",
+      "pq-2011": "read",
+      "diskann-2019": "skim"
+    }
+  }
+}

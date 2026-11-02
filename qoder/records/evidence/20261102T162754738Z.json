@@ -1,0 +1,331 @@
+{
+  "question": "如果内存预算有限、但要求 95% 以上召回率并支撑十亿级向量，应该怎样在 IVF、PQ、图索引与磁盘索引之间取舍？",
+  "generated_at": "2026-11-02T16:27:54Z",
+  "scope_id": "scp_2p012trver1cdhf9fmj9w4n0wd",
+  "manifest": {
+    "version": 1,
+    "corpus_fingerprint": "a9faaae978047c853c8047f6b8f8d6845ad26a5a6f3b6ebce8ba8e329ea47f49",
+    "chunks": 54
+  },
+  "plan": {
+    "terms": [
+      "PQ",
+      "IVF",
+      "图索引",
+      "十亿级",
+      "召回率",
+      "内存",
+      "磁盘"
+    ],
+    "expansions": [
+      "乘积量化",
+      "product quantization",
+      "倒排",
+      "倒排索引",
+      "倒排表",
+      "inverted file",
+      "inverted index",
+      "inverted list",
+      "graph index",
+      "graph-based index",
+      "HNSW",
+      "NSW",
+      "billion-scale",
+      "billion scale",
+      "billion",
+      "recall",
+      "memory",
+      "SSD",
+      "disk",
+      "solid-state drive"
+    ],
+    "variants": [
+      "如果内存预算有限、但要求 95% 以上召回率并支撑十亿级向量，应该怎样在 IVF、PQ、图索引与磁盘索引之间取舍？",
+      "如果内存预算有限、但要求 95% 以上召回率并支撑十亿级向量，应该怎样在 IVF、PQ、图索引与磁盘索引之间取舍？ 乘积量化 product quantization 倒排 倒排索引 倒排表 inverted file inverted index inverted list graph index graph-based index HNSW NSW billion-scale billion scale billion recall memory SSD disk solid-state drive",
+      "如果memory预算有限、但要求 95% 以上recall并支撑billion-scale向量，应该怎样在 IVF、PQ、graph index与SSD索引之间取舍？"
+    ]
+  },
+  "hits": [
+    {
+      "rank": 1,
+      "paper": {
+        "id": "faiss-2024",
+        "title": "The Faiss Library",
+        "authors": "Douze, Guzhva, Deng, Johnson, Szilvasy, Mazare, Lomeli, Hosseini, Jegou",
+        "year": 2024,
+        "venue": "arXiv preprint"
+      },
+      "section": "关键实验与结论",
+      "chunk_id": "b6df4ab2c22b",
+      "score": 0.9071,
+      "rrf": 0.04865990111891752,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "PQ",
+        "IVF",
+        "十亿级",
+        "召回率",
+        "内存",
+        "磁盘"
+      ],
+      "snippet": "内存受限时，IVF-PQ 通过调节桶数与探测数在召回率与延迟之间折中",
+      "evidence": [
+        "内存受限时，IVF-PQ 通过调节桶数与探测数在召回率与延迟之间折中",
+        "十亿级以上且内存不足时，需要磁盘索引或 GPU 分片",
+        "内存充足且要求高召回时，HNSW 或扁平索引加量化重排更合适"
+      ]
+    },
+    {
+      "rank": 2,
+      "paper": {
+        "id": "diskann-2019",
+        "title": "DiskANN: Fast Accurate Billion-point Nearest Neighbor Search on a Single Node",
+        "authors": "Subramanya, Devvrit, Simhadri, Krishnaswamy, Kadekodi",
+        "year": 2019,
+        "venue": "NeurIPS"
+      },
+      "section": "研究问题",
+      "chunk_id": "84f3e5b8cc79",
+      "score": 0.8608,
+      "rrf": 0.04839549075403121,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "图索引",
+        "十亿级",
+        "召回率",
+        "内存",
+        "磁盘"
+      ],
+      "snippet": "难点在于：图索引的搜索过程本质上是随机访问，磁盘随机读的延迟比内存高两个数量级",
+      "evidence": [
+        "难点在于：图索引的搜索过程本质上是随机访问，磁盘随机读的延迟比内存高两个数量级",
+        "内存索引受容量限制，十亿级向量全部放进内存成本过高",
+        "能否用一台普通服务器（大内存 + 一块 NVMe SSD）支撑十亿点、毫秒级、95% 以上召回率的检索"
+      ]
+    },
+    {
+      "rank": 3,
+      "paper": {
+        "id": "diskann-2019",
+        "title": "DiskANN: Fast Accurate Billion-point Nearest Neighbor Search on a Single Node",
+        "authors": "Subramanya, Devvrit, Simhadri, Krishnaswamy, Kadekodi",
+        "year": 2019,
+        "venue": "NeurIPS"
+      },
+      "section": "关键实验与结论",
+      "chunk_id": "2b7e8835da0e",
+      "score": 0.8409,
+      "rrf": 0.04690554740957967,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "IVF",
+        "十亿级",
+        "召回率",
+        "内存",
+        "磁盘"
+      ],
+      "snippet": "实验还对比了纯内存 HNSW 与纯磁盘 IVF：在同等召回率下，DiskANN 的延迟更低或内存占用更小",
+      "evidence": [
+        "实验还对比了纯内存 HNSW 与纯磁盘 IVF：在同等召回率下，DiskANN 的延迟更低或内存占用更小",
+        "这证明了“内存导航 + 磁盘精排”的分层思路是可行的",
+        "论文报告在十亿级数据集上，单节点（约 64 GB 内存 + NVMe SSD）可以达到 5 毫秒以内、95% 以上 recall@1 的表现，且索引构建规模可扩展到十亿点"
+      ]
+    },
+    {
+      "rank": 4,
+      "paper": {
+        "id": "faiss-gpu-2019",
+        "title": "Billion-scale Similarity Search with GPUs",
+        "authors": "Johnson, Douze, Jegou",
+        "year": 2019,
+        "venue": "IEEE BigComp"
+      },
+      "section": "研究问题",
+      "chunk_id": "17290d6e6e3f",
+      "score": 0.7852,
+      "rrf": 0.045949904158859384,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "PQ",
+        "IVF",
+        "十亿级",
+        "内存"
+      ],
+      "snippet": "论文要解决的问题是：如何把倒排索引（inverted file, IVF）与乘积量化（PQ）的完整流水线搬到 GPU 上，使得十亿级向量的索引构建与查询都能在单机多卡上完成，并给出可复现的性能数据",
+      "evidence": [
+        "论文要解决的问题是：如何把倒排索引（inverted file, IVF）与乘积量化（PQ）的完整流水线搬到 GPU 上，使得十亿级向量的索引构建与查询都能在单机多卡上完成，并给出可复现的性能数据",
+        "当向量库达到十亿级，单机 CPU 的算力与内存带宽都会成为瓶颈"
+      ]
+    },
+    {
+      "rank": 5,
+      "paper": {
+        "id": "pq-2011",
+        "title": "Product Quantization for Nearest Neighbor Search",
+        "authors": "Jegou, Douze, Schmid",
+        "year": 2011,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "对实践的启示",
+      "chunk_id": "10cc7050f077",
+      "score": 0.7728,
+      "rrf": 0.045015870871884925,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "PQ",
+        "召回率",
+        "内存",
+        "磁盘"
+      ],
+      "snippet": "如果查询延迟要求很高而内存相对宽裕，可以把 PQ 只用于导航，保留全精度向量做精排，这正是后续磁盘索引方案的基本结构",
+      "evidence": [
+        "如果查询延迟要求很高而内存相对宽裕，可以把 PQ 只用于导航，保留全精度向量做精排，这正是后续磁盘索引方案的基本结构",
+        "PQ 的价值在于把“内存不够”转化为“精度换空间”",
+        "工程上应先估算内存预算：每个向量 m 字节，乘以库规模，即可判断 m 的取值上限"
+      ]
+    },
+    {
+      "rank": 6,
+      "paper": {
+        "id": "hnsw-2018",
+        "title": "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs",
+        "authors": "Malkov, Yashunin",
+        "year": 2018,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "对实践的启示",
+      "chunk_id": "b864a7c8e00c",
+      "score": 0.7614,
+      "rrf": 0.04416751012145749,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "十亿级",
+        "召回率",
+        "内存",
+        "磁盘"
+      ],
+      "snippet": "若内存受限或需要十亿级规模，应考虑量化索引或磁盘索引，并把 HNSW 作为内存层的候选方案之一",
+      "evidence": [
+        "若内存受限或需要十亿级规模，应考虑量化索引或磁盘索引，并把 HNSW 作为内存层的候选方案之一",
+        "M 的取值建议从 16 起步，按内存预算上调",
+        "选型时先确定召回率目标，再反推 ef，而不是先固定延迟"
+      ]
+    },
+    {
+      "rank": 7,
+      "paper": {
+        "id": "faiss-2024",
+        "title": "The Faiss Library",
+        "authors": "Douze, Guzhva, Deng, Johnson, Szilvasy, Mazare, Lomeli, Hosseini, Jegou",
+        "year": 2024,
+        "venue": "arXiv preprint"
+      },
+      "section": "研究问题",
+      "chunk_id": "fc9cd609832a",
+      "score": 0.7579,
+      "rrf": 0.04390451832907076,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "PQ",
+        "IVF",
+        "图索引",
+        "召回率"
+      ],
+      "snippet": "向量检索领域积累了大量索引结构：扁平索引、倒排索引（IVF）、图索引（HNSW 类）、量化索引（PQ、残差量化）、二值索引",
+      "evidence": [
+        "向量检索领域积累了大量索引结构：扁平索引、倒排索引（IVF）、图索引（HNSW 类）、量化索引（PQ、残差量化）、二值索引",
+        "工程团队在选型时常常缺少统一的口径：不同论文使用的数据集、召回率定义与硬件不同，性能数字无法直接比较"
+      ]
+    },
+    {
+      "rank": 8,
+      "paper": {
+        "id": "pq-2011",
+        "title": "Product Quantization for Nearest Neighbor Search",
+        "authors": "Jegou, Douze, Schmid",
+        "year": 2011,
+        "venue": "IEEE TPAMI"
+      },
+      "section": "研究问题",
+      "chunk_id": "2ffaea1cfa87",
+      "score": 0.6446,
+      "rrf": 0.03863269981333786,
+      "matched_by": [
+        "text",
+        "vector"
+      ],
+      "terms": [
+        "PQ",
+        "召回率",
+        "内存"
+      ],
+      "snippet": "传统的哈希方法把向量映射到二值码，压缩率高但召回率损失大",
+      "evidence": [
+        "传统的哈希方法把向量映射到二值码，压缩率高但召回率损失大",
+        "一个 128 维的单精度向量占 512 字节，十亿条就是 512 GB，无法常驻内存"
+      ]
+    }
+  ],
+  "coverage": {
+    "terms_total": 7,
+    "terms_covered": 7,
+    "terms_missing": [],
+    "ratio": 1.0,
+    "papers_hit": [
+      "faiss-2024",
+      "diskann-2019",
+      "faiss-gpu-2019",
+      "pq-2011",
+      "hnsw-2018"
+    ],
+    "papers_total": 8
+  },
+  "gaps": {
+    "uncovered_papers": [
+      "ivf-adc-2006",
+      "mrl-2022",
+      "scann-2020"
+    ],
+    "missing_terms": [],
+    "note": "3 篇论文未被命中，建议补充检索或调整问题表述。"
+  },
+  "memory": {
+    "question": "内存受限条件下如何构建十亿级向量检索系统",
+    "confirmed": [
+      "PQ 把向量压到 m 字节，适合作为内存中的导航层"
+    ],
+    "excluded": [
+      {
+        "text": "暂不考虑依赖 GPU 的方案",
+        "paper": null
+      }
+    ],
+    "excluded_papers": [],
+    "reading": {
+      "hnsw-2018": "read",
+      "pq-2011": "read",
+      "diskann-2019": "skim"
+    }
+  }
+}

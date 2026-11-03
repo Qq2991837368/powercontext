@@ -17,6 +17,7 @@
 #define USING_LOG_PREFIX SQL
 #include "rust/config.h"
 #include "sql/ob_sql.h"
+#include "sql/ob_file_sql_rewriter.h"
 #include "lib/json/ob_json_print_utils.h"
 #include "lib/stat/ob_diagnostic_info_guard.h"
 #include "query/runtime/ob_query_runtime_environment.h"
@@ -3184,14 +3185,22 @@ int ObSql::parser_and_check(const ObString &outlined_stmt,
   } else {
     pctx->reset_datum_param_store();
     pctx->get_param_store_for_update().reuse();
-    ObParser parser(allocator, session->get_sql_mode(), session->get_charsets4parser());
-    if (OB_FAIL(parser.parse(outlined_stmt, parse_result,
-                             STD_MODE,
-                             pc_ctx.sql_ctx_.handle_batched_multi_stmt(),
-                             false, NULL != session->get_pl_context()))) {
-    } else if ((PC_PS_MODE == pc_ctx.mode_ || PC_PL_MODE == pc_ctx.mode_)
-      && OB_FAIL(construct_param_store_from_parameterized_params(
-                    pc_ctx, pctx->get_param_store_for_update()))) {
+    ObString file_sql_text = outlined_stmt;
+    bool file_sql_changed = false;
+    bool contains_file_sql = false;
+    if (OB_FAIL(ob_rewrite_file_sql(allocator, *session, outlined_stmt, file_sql_text,
+                                    file_sql_changed, contains_file_sql))) {
+      LOG_WARN("failed to rewrite file sql statement", K(ret));
+    } else {
+      ObParser parser(allocator, session->get_sql_mode(), session->get_charsets4parser());
+      if (OB_FAIL(parser.parse(file_sql_text, parse_result,
+                               STD_MODE,
+                               pc_ctx.sql_ctx_.handle_batched_multi_stmt(),
+                               false, NULL != session->get_pl_context()))) {
+      } else if ((PC_PS_MODE == pc_ctx.mode_ || PC_PL_MODE == pc_ctx.mode_)
+        && OB_FAIL(construct_param_store_from_parameterized_params(
+                      pc_ctx, pctx->get_param_store_for_update()))) {
+      }
     }
     pc_ctx.sql_ctx_.is_sensitive_ |= parse_result.contain_sensitive_data_;
     if (OB_SUCC(ret)) {
@@ -3261,6 +3270,11 @@ int ObSql::parser_and_check(const ObString &outlined_stmt,
               if (OB_SQL_PC_NOT_EXIST == get_plan_err) {
                 add_plan_to_pc = true;
               } else {
+                add_plan_to_pc = false;
+              }
+              if (contains_file_sql) {
+                // File SQL statements must be re-parsed and re-checked on every
+                // execution so that the enable switch and file contents stay fresh.
                 add_plan_to_pc = false;
               }
             }

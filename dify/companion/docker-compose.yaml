@@ -1,0 +1,27 @@
+name: memory-cannery
+
+services:
+  companion:
+    build: .
+    container_name: memory-cannery
+    ports:
+      - "8765:8765"
+    environment:
+      CANNERY_STATE_DIR: /data
+      CANNERY_SCOPE_KEY: memory-cannery-v1
+    volumes:
+      - cannery-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health')"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  cannery-data:

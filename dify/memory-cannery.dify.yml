@@ -1,0 +1,282 @@
+app:
+  description: 把一小段记忆封存成罐头，并从旧罐头里听见回声。
+  icon: 🫙
+  icon_background: '#FFE4C4'
+  icon_type: emoji
+  mode: workflow
+  name: 记忆罐头铺
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/openai_api_compatible:0.0.73@4cf123ffaa4556f079bed6c47f3a462cc825504b859b183239e74eb19136a4b5
+    version: null
+kind: app
+site:
+  chat_color_theme: null
+  chat_color_theme_inverted: false
+  copyright: null
+  custom_disclaimer: ''
+  default_language: zh-Hans
+  description: null
+  icon: 🫙
+  icon_background: '#FFE4C4'
+  icon_type: emoji
+  input_placeholder: null
+  privacy_policy: null
+  show_workflow_steps: true
+  title: 记忆罐头铺
+  use_icon_as_answer_icon: false
+version: 0.7.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload: {}
+    sensitive_word_avoidance:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: http-request
+      id: start-capsule_http
+      source: start
+      sourceHandle: source
+      target: capsule_http
+      targetHandle: target
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: llm
+      id: capsule_http-card_llm
+      source: capsule_http
+      sourceHandle: source
+      target: card_llm
+      targetHandle: target
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+      id: card_llm-end
+      source: card_llm
+      sourceHandle: source
+      target: end
+      targetHandle: target
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - default: ''
+          description: 写下一小段今天发生的事、一个画面或一种心情。
+          label: 今天想封存的记忆
+          max_length: 1000
+          required: true
+          type: paragraph
+          variable: memory
+        - default: 自动
+          description: 不选也可以，掌柜会自己猜。
+          label: 心情
+          options:
+          - 自动
+          - 温柔
+          - 好笑
+          - 遗憾
+          - 平静
+          - 奇妙
+          required: false
+          type: select
+          variable: mood
+        - default: 随机
+          description: 随机口味会从货架上挑一种。
+          label: 罐头口味
+          options:
+          - 随机
+          - 桂花
+          - 海风
+          - 旧歌
+          - 雨夜
+          - 橘子汽水
+          - 晒过太阳的被子
+          required: false
+          type: select
+          variable: flavor
+      height: 160
+      id: start
+      position:
+        x: 80
+        y: 240
+      positionAbsolute:
+        x: 80
+        y: 240
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - key: memory
+            type: text
+            value: '{{#start.memory#}}'
+          - key: mood
+            type: text
+            value: '{{#start.mood#}}'
+          - key: flavor
+            type: text
+            value: '{{#start.flavor#}}'
+          type: x-www-form-urlencoded
+        desc: 写入 seekdb，并用 PowerContext 混合检索旧罐头。
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 2
+          retry_enabled: true
+          retry_interval: 500
+        selected: false
+        ssl_verify: false
+        timeout:
+          connect: 10
+          read: 60
+          write: 30
+        title: 封存记忆 · 检索回声
+        type: http-request
+        url: http://host.docker.internal:8765/capsule
+        version: '1'
+      height: 120
+      id: capsule_http
+      position:
+        x: 420
+        y: 240
+      positionAbsolute:
+        x: 420
+        y: 240
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: null
+        desc: 把记忆和回声写成一张温柔的罐头卡片。
+        memory: null
+        model:
+          completion_params:
+            max_tokens: 700
+            temperature: 0.75
+          mode: chat
+          name: gpt-4o-mini
+          provider: langgenius/openai_api_compatible/openai_api_compatible
+        prompt_config:
+          jinja2_variables: []
+        prompt_template:
+        - role: system
+          text: 你是「记忆罐头铺」的掌柜。你的工作是把客人刚封存的一小段记忆，写成一张适合贴在玻璃罐上的卡片，并从旧罐头里找出温柔的回声。你只使用给出的罐头数据，不编造人名、地点或事件。语气克制、具体、有一点幽默，不要说教。
+        - role: user
+          text: '请为这段记忆封存一罐罐头。
+
+
+            <capsule_data>
+
+            {{#capsule_http.body#}}
+
+            </capsule_data>
+
+
+            请严格按下面四段输出，总字数不超过 400 字：
+
+            【罐头标签】用「口味 · 心情 · 一句 20 字以内的标语」的格式。
+
+            【罐头正文】用 80-120 字，把 capsule.text 里的记忆写成第三人称小故事，保留原记忆中的关键细节，不要扩写不存在的情节。
+
+            【旧罐头回声】从 echoes 中最多挑 3 条，每条用「#编号（日期）：一句它为什么像你」的格式；如果 echoes 为空，就写「这次货架很安静，只有新罐头自己的回声」。
+
+            【今日小任务】写一个 1 分钟内能完成、和这段记忆有关的小动作。
+
+
+            不要复述 JSON，不要输出字段名，不要使用 Markdown 表格。'
+        reasoning_format: tagged
+        selected: false
+        structured_output: null
+        structured_output_switch_on: false
+        title: 写罐头标签
+        type: llm
+        version: '1'
+        vision:
+          configs:
+            detail: high
+            variable_selector:
+            - sys
+            - files
+          enabled: false
+      height: 120
+      id: card_llm
+      position:
+        x: 760
+        y: 240
+      positionAbsolute:
+        x: 760
+        y: 240
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        outputs:
+        - value_selector:
+          - card_llm
+          - text
+          value_type: string
+          variable: card
+        - value_selector:
+          - capsule_http
+          - body
+          value_type: string
+          variable: capsule_data
+        - value_selector:
+          - capsule_http
+          - status_code
+          value_type: number
+          variable: status_code
+        selected: false
+        title: 结束
+        type: end
+      height: 90
+      id: end
+      position:
+        x: 1100
+        y: 240
+      positionAbsolute:
+        x: 1100
+        y: 240
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.8
+  rag_pipeline_variables: []

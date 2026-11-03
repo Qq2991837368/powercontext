@@ -1,0 +1,24 @@
+{
+  "name": "stepfun-local-kb",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Browser-local embedding + seekdb hybrid retrieval mini knowledge base (seekdb x StepFun competition task)",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "overrides": {
+    "@seekdb/default-embed": "1.2.0"
+  },
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "start": "npm run start -w server",
+    "fetch:model": "node scripts/fetch-model.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

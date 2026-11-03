@@ -1,0 +1,8 @@
+node_modules/
+dist/
+server/data/
+web/public/models/
+web/public/ort/
+*.log
+!scripts/smoke-test.log
+.DS_Store

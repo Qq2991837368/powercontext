@@ -1,0 +1,10 @@
+﻿health: {"ok":true,"engine":"seekdb","mode":"embedded","path":"D:\\default-workspace\\powercontext\\stepfun\\server\\data\\seekdb","database":"test","vectorDim":512,"collectionCount":0,"uptimeMs":13032}
+created: kb_mw0bves8_q8 count= 0
+add+refresh: {"ok":true,"written":3,"writeMs":52.13489999999911,"refreshMs":5144.830699999999,"count":3}
+hybrid: 25.5ms ["smoke-1","smoke-2","smoke-3"]
+hybrid terms: ["seekdb","混合检索"]
+vector: 4.3ms ["smoke-1","smoke-2","smoke-3"]
+incremental add+refresh: {"ok":true,"written":1,"writeMs":10.639200000001438,"refreshMs":403.09409999999843,"count":4}
+after refresh: ["smoke-4","smoke-3","smoke-1","smoke-2"]
+fulltext mode: ["smoke-4"]
+deleted kb_mw0bves8_q8 total 8786 ms

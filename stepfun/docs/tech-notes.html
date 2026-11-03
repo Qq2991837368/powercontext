@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>StepFun × seekdb 技术说明</title>
+<style>
+  @page { size: A4; margin: 13mm 15mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #1b1f24; font: 10.2pt/1.6 "Microsoft YaHei", "PingFang SC", sans-serif; }
+  h1 { margin: 0 0 2mm; font-size: 18pt; letter-spacing: .5px; }
+  .sub { color: #5b6573; font-size: 9pt; margin-bottom: 5mm; }
+  h2 { margin: 4.5mm 0 1.6mm; font-size: 12pt; color: #0b5cad; border-left: 3px solid #0b5cad; padding-left: 2.5mm; }
+  p { margin: 0 0 1.6mm; text-align: justify; }
+  ul { margin: 0 0 1.6mm; padding-left: 5mm; }
+  li { margin-bottom: .8mm; }
+  table { width: 100%; border-collapse: collapse; margin: 1.5mm 0 2mm; font-size: 9pt; }
+  th, td { border: .4pt solid #c9d2dc; padding: 1.2mm 1.6mm; text-align: left; }
+  th { background: #f2f6fa; font-weight: 600; }
+  code { font-family: Consolas, monospace; font-size: 8.6pt; background: #f4f6f8; padding: 0 1mm; }
+  pre { background: #f4f6f8; border-left: 2px solid #98a6b5; padding: 2mm 3mm; font: 8.4pt/1.5 Consolas, monospace; white-space: pre-wrap; margin: 1.5mm 0 2mm; }
+  .note { background: #fff8e6; border: .4pt solid #e8c97a; padding: 2mm 3mm; margin: 2mm 0; font-size: 9pt; }
+  .foot { margin-top: 4mm; color: #6b7685; font-size: 8.4pt; border-top: .4pt solid #d7dee6; padding-top: 2mm; }
+</style>
+</head>
+<body>
+<h1>StepFun × seekdb：浏览器本地向量化的迷你知识库</h1>
+<div class="sub">技术说明 · Node.js 24.19.0 / seekdb-js 1.4.0 / Transformers.js 3.7.6 / ONNX Runtime Web 1.22</div>
+
+<h2>1. 方案概览</h2>
+<p>应用分为浏览器端与 Node 端。浏览器在 Web Worker 中加载 <code>Xenova/bge-small-zh-v1.5</code>（512 维，CLS pooling + L2 normalize），完成文本分块与 embedding；Node 端把 <code>{id, text, embedding, metadata}</code> 批量 upsert 到嵌入式 seekdb。查询时浏览器只编码 query，将查询向量与原始关键词交给 seekdb，由 <code>hybridSearch</code> 在库内完成向量 + 全文的 RRF 融合，<strong>客户端不参与融合或重排</strong>。模型权重本地托管，向量不离开设备，后端不做 embedding。</p>
+
+<h2>2. 推理后端与量化</h2>
+<ul>
+  <li>模型资产：q8 ONNX 24,010,842 B，fp32 ONNX 94,851,877 B；含 tokenizer/config 总文件体积 24,451,175 B（23.32 MiB）与 95,292,210 B（90.88 MiB），压缩比 <strong>3.90×</strong>。</li>
+  <li>启动时显式探测 <code>navigator.gpu.requestAdapter()</code>；可用则优先 WebGPU，加载或推理失败时捕获异常并降级 WASM，UI 顶部横幅展示原因。</li>
+</ul>
+<div class="note"><strong>实测结论：</strong>同机同语料（28 篇 / 13 条标注查询）下，q8 跑在 ORT WebGPU EP 时数值不可靠：纯向量 Recall@5 从 WASM 的 80.1% 降至 21.8%，吞吐也从约 21 片段/秒降至 17 片段/秒。因此 INT8 显式路由到 WASM 并在 UI 说明；FP32 使用 WebGPU。既保留 WebGPU 优先能力，也保证 INT8 检索质量。</div>
+<p>ORT 的 <code>.mjs</code> loader 不能从 Vite 的 <code>public/</code> 目录动态导入（Vite 会报 “should not be imported from source code”）。实现改为 fetch 该文件并生成 Blob URL，<code>.wasm</code> 使用同源绝对 URL，开发与生产构建行为一致。</p>
+
+<h2>3. seekdb 内的混合检索</h2>
+<pre>fulltextIndex: new FulltextIndexConfig('ngram2', { min_ngram_size: 2, max_ngram_size: 3 })
+vectorIndex: new VectorIndexConfig({
+  hnsw: { dimension: 512, distance: 'cosine' },
+  embeddingFunction: null,   // 向量由浏览器提供
+})
+
+collection.hybridSearch({
+  query: { whereDocument: { $or: [{ $contains: term }, ...] }, nResults },
+  knn: { queryEmbeddings: embedding, nResults },
+  rank: { rrf: {} },
+  nResults,
+  include: ['documents', 'metadatas', 'distances'],
+})</pre>
+<p>中文查询按空白/标点拆词，长 CJK 串按 3 字切块（最多 8 项），以 <code>$contains</code> 构造全文条件；向量通道走 HNSW cosine。RRF 融合、排序、Top-N 截断全部发生在 seekdb 进程内。</p>
+
+<h2>4. 增量导入与索引刷新</h2>
+<p>导入流程：分块（默认 320 字 / 64 重叠）→ Worker 按 batch 8 向量化 → 前端按 16 条/批调用 <code>POST /documents</code>（不刷新）→ 全部写完调用一次 <code>refresh_index()</code>。新增片段刷新后立即可检索，接口返回服务端实测 <code>writeMs</code> / <code>refreshMs</code>。</p>
+<p>嵌入式 seekdb 的原生引擎并发访问在 Windows 下会触发 <code>0xC0000005</code>。服务端用单一 Promise 队列串行化全部 <code>/api</code> 请求；响应很小，串行化不构成吞吐瓶颈。</p>
+
+<h2>5. 实测结果</h2>
+<p>环境：AMD Ryzen 7 6800H / RTX 3050 Ti Laptop，Chromium（WebGPU 可用），Node v24.19.0。质量集为 28 篇内置语料、13 条人工标注查询，指标取宏平均。</p>
+<table>
+<tr><th>配置</th><th>模型体积</th><th>压缩比</th><th>向量化</th><th>混合 R@5</th><th>混合 nDCG@5</th><th>纯向量 R@5</th></tr>
+<tr><td>INT8 (q8) + WASM</td><td>23.32 MiB</td><td>3.90×</td><td>15.86 片段/秒</td><td>84.0%</td><td>0.827</td><td>80.1%</td></tr>
+<tr><td>FP32 + WebGPU</td><td>90.88 MiB</td><td>—</td><td>71.52 片段/秒</td><td>84.0%</td><td>0.829</td><td>80.1%</td></tr>
+</table>
+<p>导入策略（INT8，12 篇）：逐条写入 + 每条刷新 4922 ms（12 次刷新）；批大小 8 + 单次刷新 1239 ms（1 次刷新），约 <strong>3.97×</strong> 加速，索引刷新是主要成本（单次约 320–450 ms）。</p>
+<p>查询延迟中位数（28 篇库）：查询向量化 15.5 ms（INT8/WASM）/ 12.0 ms（FP32/WebGPU），seekdb 检索 6.8 ms / 6.6 ms。首次导入 56 个片段：向量化 3857 ms、写入 664 ms、刷新 443 ms，端到端 5350 ms。</p>
+
+<h2>6. 取舍与边界</h2>
+<ul>
+  <li>体积口径统一按实际下载文件字节（含 tokenizer 与 config），不以参数数量估算。</li>
+  <li>INT8 与 FP32 各自建库，避免不同精度向量混用；切换精度时 UI 提示并自动新建集合。</li>
+  <li>内置 28 篇语料与 13 条查询用于可复现评测；评测重建独立集合并保留原始 JSON。</li>
+  <li>模型可用 <code>npm run fetch:model</code> 预下载，也可回退 hf-mirror / Hugging Face 远程拉取；推理始终在本地浏览器完成，不调用云端推理接口。</li>
+</ul>
+
+<div class="foot">复现步骤与原始测试日志见 docs/VERIFICATION.md 与 scripts/smoke-test.log。seekdb：向量 + 全文索引、DBMS_HYBRID_SEARCH + RRF；前端：React 19 + Vite 8；模型：bge-small-zh-v1.5 ONNX。</div>
+</body>
+</html>

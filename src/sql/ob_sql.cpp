@@ -15,8 +15,9 @@
  */
 
 #define USING_LOG_PREFIX SQL
-#include "config_bridge.h"
+#include "rust/config.h"
 #include "sql/ob_sql.h"
+#include "sql/ob_file_sql_rewriter.h"
 #include "lib/json/ob_json_print_utils.h"
 #include "lib/stat/ob_diagnostic_info_guard.h"
 #include "query/runtime/ob_query_runtime_environment.h"
@@ -2767,7 +2768,7 @@ int ObSql::code_generate(
   }
   NG_TRACE(cg_end);
 
-  // set phy table location in task_exec_ctx, query_timeout in exec_context
+  // set tablet accesses in the execution context, query_timeout in exec_context
   if (OB_SUCC(ret)) {
     const ObPlanCachePolicy plan_cache_policy = phy_plan->get_phy_plan_hint().plan_cache_policy_;
     ObPhyPlanHint phy_hint(logical_plan->get_optimizer_context().get_global_hint());
@@ -2796,11 +2797,11 @@ int ObSql::code_generate(
       } else {
         ObDASCtx &das_ctx = DAS_CTX(result.get_exec_context());
         for (int64_t i = 0; OB_SUCC(ret) && i < tbl_part_infos.count(); i++) {
-          ObTableLocation &tl = tbl_part_infos.at(i)->get_table_location();
+          TableAccessPlan &tl = tbl_part_infos.at(i)->get_table_access_plan();
           if (!tl.use_das()) {
-            const ObCandiTableLoc &candi_table_loc = tbl_part_infos.at(i)->get_phy_tbl_location_info();
-            if (OB_FAIL(das_ctx.add_candi_table_loc(tl.get_loc_meta(), candi_table_loc))) {
-            } else if (OB_UNLIKELY(das_ctx.get_table_loc_list().empty())) {
+            const TableAccessTargets &table_targets = tbl_part_infos.at(i)->get_access_targets();
+            if (OB_FAIL(das_ctx.add_table_access_targets(tl.get_access_meta(), table_targets))) {
+            } else if (OB_UNLIKELY(das_ctx.get_table_accesses().empty())) {
               ret = OB_ERR_UNEXPECTED;
             }
           }
@@ -2811,15 +2812,15 @@ int ObSql::code_generate(
     if (OB_SUCC(ret)) {
       bool skip_non_partition_optimized = false;
       for (int64_t i = 0; OB_SUCC(ret) && i < tbl_part_infos.count(); i++) {
-        ObTableLocation &tl = tbl_part_infos.at(i)->get_table_location();
-        if (tl.is_partitioned() || is_virtual_table(tl.get_loc_meta().ref_table_id_)) {
+        TableAccessPlan &tl = tbl_part_infos.at(i)->get_table_access_plan();
+        if (tl.is_partitioned() || is_virtual_table(tl.get_access_meta().ref_table_id_)) {
           skip_non_partition_optimized = true;
           break;
         }
       }
       if (OB_SUCC(ret) && !skip_non_partition_optimized) {
         for (int64_t i = 0; OB_SUCC(ret) && i < tbl_part_infos.count(); i++) {
-          ObTableLocation &tl = tbl_part_infos.at(i)->get_table_location();
+          TableAccessPlan &tl = tbl_part_infos.at(i)->get_table_access_plan();
           if (OB_FAIL(tl.calc_not_partitioned_table_ids(result.get_exec_context()))) {
           } else {
             tl.set_is_non_partition_optimized(true);
@@ -2827,9 +2828,9 @@ int ObSql::code_generate(
         }
       }
     }
-    // set table location for phy_plan
+    // set table access plans for the physical plan
     if (OB_SUCC(ret)) {
-      if (OB_FAIL(phy_plan->set_table_locations(tbl_part_infos, *sql_ctx.schema_guard_))) {
+      if (OB_FAIL(phy_plan->set_table_access_plans(tbl_part_infos, *sql_ctx.schema_guard_))) {
       }
     }
   }
@@ -3184,14 +3185,22 @@ int ObSql::parser_and_check(const ObString &outlined_stmt,
   } else {
     pctx->reset_datum_param_store();
     pctx->get_param_store_for_update().reuse();
-    ObParser parser(allocator, session->get_sql_mode(), session->get_charsets4parser());
-    if (OB_FAIL(parser.parse(outlined_stmt, parse_result,
-                             STD_MODE,
-                             pc_ctx.sql_ctx_.handle_batched_multi_stmt(),
-                             false, NULL != session->get_pl_context()))) {
-    } else if ((PC_PS_MODE == pc_ctx.mode_ || PC_PL_MODE == pc_ctx.mode_)
-      && OB_FAIL(construct_param_store_from_parameterized_params(
-                    pc_ctx, pctx->get_param_store_for_update()))) {
+    ObString file_sql_text = outlined_stmt;
+    bool file_sql_changed = false;
+    bool contains_file_sql = false;
+    if (OB_FAIL(ob_rewrite_file_sql(allocator, *session, outlined_stmt, file_sql_text,
+                                    file_sql_changed, contains_file_sql))) {
+      LOG_WARN("failed to rewrite file sql statement", K(ret));
+    } else {
+      ObParser parser(allocator, session->get_sql_mode(), session->get_charsets4parser());
+      if (OB_FAIL(parser.parse(file_sql_text, parse_result,
+                               STD_MODE,
+                               pc_ctx.sql_ctx_.handle_batched_multi_stmt(),
+                               false, NULL != session->get_pl_context()))) {
+      } else if ((PC_PS_MODE == pc_ctx.mode_ || PC_PL_MODE == pc_ctx.mode_)
+        && OB_FAIL(construct_param_store_from_parameterized_params(
+                      pc_ctx, pctx->get_param_store_for_update()))) {
+      }
     }
     pc_ctx.sql_ctx_.is_sensitive_ |= parse_result.contain_sensitive_data_;
     if (OB_SUCC(ret)) {
@@ -3261,6 +3270,11 @@ int ObSql::parser_and_check(const ObString &outlined_stmt,
               if (OB_SQL_PC_NOT_EXIST == get_plan_err) {
                 add_plan_to_pc = true;
               } else {
+                add_plan_to_pc = false;
+              }
+              if (contains_file_sql) {
+                // File SQL statements must be re-parsed and re-checked on every
+                // execution so that the enable switch and file contents stay fresh.
                 add_plan_to_pc = false;
               }
             }
